@@ -1,0 +1,28 @@
+{
+  "name": "ai-model-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.6.69 preview",
+    "check": "npx --yes hyperframes@0.6.69 lint && npx --yes hyperframes@0.6.69 validate && npx --yes hyperframes@0.6.69 inspect",
+    "render": "npx --yes hyperframes@0.6.69 render",
+    "render:draft": "npx --yes hyperframes@0.6.69 render --quality draft",
+    "render:all": "node scripts/render-scenes.mjs",
+    "render:std": "node scripts/render-scenes.mjs --quality standard",
+    "render:s1": "node scripts/render-scenes.mjs --scene=01",
+    "render:s2": "node scripts/render-scenes.mjs --scene=02",
+    "render:s3": "node scripts/render-scenes.mjs --scene=03",
+    "render:s4": "node scripts/render-scenes.mjs --scene=04",
+    "render:s5": "node scripts/render-scenes.mjs --scene=05",
+    "render:s6": "node scripts/render-scenes.mjs --scene=06",
+    "render:s7": "node scripts/render-scenes.mjs --scene=07",
+    "render:s8": "node scripts/render-scenes.mjs --scene=08",
+    "render:s9": "node scripts/render-scenes.mjs --scene=09",
+    "render:s10": "node scripts/render-scenes.mjs --scene=10",
+    "render:s11": "node scripts/render-scenes.mjs --scene=11",
+    "publish": "npx --yes hyperframes@0.6.69 publish"
+  },
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

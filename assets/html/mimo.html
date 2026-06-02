@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiMo OS v2.5</title>
+<style>
+:root {
+--a1: #ff6b35;
+--a2: #f7c59f;
+--bg: #0f0f0f;
+--bg-card: rgba(30, 30, 30, 0.85);
+--bg-glass: rgba(255, 255, 255, 0.04);
+--text: #e0e0e0;
+--text-dim: #888;
+--border: rgba(255, 107, 53, 0.15);
+--glow: rgba(255, 107, 53, 0.3);
+--radius: 12px;
+--radius-sm: 8px;
+--space: 1rem;
+--space-lg: 2rem;
+--topbar-h: 44px;
+--font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+.light {
+--bg: #f5f5f5;
+--bg-card: rgba(255, 255, 255, 0.9);
+--bg-glass: rgba(0, 0, 0, 0.03);
+--text: #222;
+--text-dim: #666;
+--border: rgba(255, 107, 53, 0.25);
+--glow: rgba(255, 107, 53, 0.15);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+font-family: var(--font-mono);
+background: var(--bg);
+color: var(--text);
+line-height: 1.6;
+transition: background 0.4s, color 0.4s;
+overflow-x: hidden;
+}
+#scroll-progress {
+position: fixed; top: 0; left: 0; height: 3px;
+background: linear-gradient(90deg, var(--a1), var(--a2));
+z-index: 9999; width: 0; transition: width 0.1s;
+}
+section { padding: var(--space-lg) var(--space); max-width: 1100px; margin: 0 auto; }
+
+/* TOPBAR */
+#topbar {
+position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h);
+background: rgba(15, 15, 15, 0.92);
+backdrop-filter: blur(12px);
+border-bottom: 1px solid var(--border);
+display: flex; align-items: center; justify-content: space-between;
+padding: 0 var(--space);
+z-index: 1000; font-size: 0.8rem;
+transition: background 0.4s;
+}
+.light #topbar { background: rgba(245, 245, 245, 0.92); }
+.topbar-left, .topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-left svg { flex-shrink: 0; }
+.topbar-center { display: flex; align-items: center; gap: 16px; }
+#clock { font-variant-numeric: tabular-nums; letter-spacing: 1px; color: var(--a2); }
+#battery { display: flex; align-items: center; gap: 5px; color: var(--a2); }
+#battery-bar { width: 28px; height: 13px; border: 1.5px solid var(--a2); border-radius: 2px; position: relative; padding: 2px; }
+#battery-bar::after { content: ''; position: absolute; right: -5px; top: 3px; width: 3px; height: 5px; background: var(--a2); border-radius: 0 1px 1px 0; }
+#battery-fill { height: 100%; background: var(--a2); border-radius: 1px; transition: width 0.3s; }
+#theme-toggle {
+background: none; border: 1px solid var(--border); border-radius: 50%;
+width: 28px; height: 28px; cursor: pointer; display: flex;
+align-items: center; justify-content: center; color: var(--text);
+transition: background 0.3s, border-color 0.3s;
+}
+#theme-toggle:hover { background: var(--glow); }
+
+/* HERO */
+#hero {
+position: relative; min-height: 80vh; display: flex; align-items: center;
+justify-content: center; padding-top: calc(var(--topbar-h) + 2rem);
+}
+#hero::before {
+content: ''; position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+width: 600px; height: 600px; border-radius: 50%;
+background: radial-gradient(circle, rgba(255,107,53,0.08) 0%, transparent 70%);
+pointer-events: none;
+}
+.terminal {
+width: 100%; max-width: 700px;
+background: var(--bg-card); border: 1px solid var(--border);
+border-radius: var(--radius); overflow: hidden;
+box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+backdrop-filter: blur(8px);
+}
+.terminal-header {
+height: 36px; background: rgba(0,0,0,0.3);
+display: flex; align-items: center; padding: 0 12px; gap: 8px;
+border-bottom: 1px solid var(--border);
+}
+.traffic { width: 12px; height: 12px; border-radius: 50%; }
+.traffic.r { background: #ff5f56; }
+.traffic.y { background: #ffbd2e; }
+.traffic.g { background: #27c93f; }
+.terminal-title { margin-left: 8px; color: var(--text-dim); font-size: 0.75rem; }
+.terminal-body {
+padding: 16px; font-size: 0.85rem; line-height: 1.8;
+max-height: 400px; overflow-y: auto; min-height: 280px;
+scrollbar-width: thin; scrollbar-color: var(--a1) transparent;
+}
+.terminal-body::-webkit-scrollbar { width: 6px; }
+.terminal-body::-webkit-scrollbar-thumb { background: var(--a1); border-radius: 3px; }
+.cursor {
+display: inline-block; width: 8px; height: 1em; background: var(--a1);
+animation: blink 1s step-end infinite; vertical-align: text-bottom;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.t-line { opacity: 0; transform: translateY(4px); }
+.t-line.show { opacity: 1; transform: translateY(0); transition: all 0.3s; }
+.t-line .label { color: var(--a1); }
+.t-line .val { color: var(--a2); }
+
+/* RADAR */
+#radar-section { text-align: center; }
+#radar-section h2 {
+font-size: 1.3rem; margin-bottom: var(--space);
+background: linear-gradient(90deg, var(--a1), var(--a2));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.radar-wrap { display: flex; justify-content: center; }
+#radar-svg { max-width: 420px; width: 100%; }
+
+/* TICKER */
+#ticker-wrap {
+overflow: hidden; border-top: 1px solid var(--border);
+border-bottom: 1px solid var(--border);
+padding: 10px 0; margin: var(--space-lg) 0;
+position: relative;
+}
+#ticker-wrap::before, #ticker-wrap::after {
+content: ''; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2;
+pointer-events: none;
+}
+#ticker-wrap::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+#ticker-wrap::after { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+.light #ticker-wrap::before { background: linear-gradient(90deg, #f5f5f5, transparent); }
+.light #ticker-wrap::after { background: linear-gradient(-90deg, #f5f5f5, transparent); }
+#ticker {
+display: flex; gap: 3rem; animation: scroll-ticker 30s linear infinite;
+width: max-content;
+}
+#ticker-wrap:hover #ticker { animation-play-state: paused; }
+@keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.ticker-item {
+white-space: nowrap; font-size: 0.85rem; color: var(--text-dim);
+letter-spacing: 0.5px;
+}
+.ticker-item .dot { color: var(--a1); margin-right: 0.5rem; }
+
+/* CARDS */
+#cards-section h2 {
+text-align: center; font-size: 1.3rem; margin-bottom: var(--space-lg);
+background: linear-gradient(90deg, var(--a1), var(--a2));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.cards-grid {
+display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+gap: var(--space);
+}
+.card {
+background: var(--bg-card);
+border: 1px solid var(--border);
+border-radius: var(--radius);
+padding: 24px;
+backdrop-filter: blur(8px);
+opacity: 0; transform: translateY(30px);
+transition: opacity 0.5s, transform 0.5s, border-color 0.3s;
+position: relative; overflow: hidden;
+}
+.card.visible { opacity: 1; transform: translateY(0); }
+.card:hover { border-color: var(--a1); }
+.card-icon {
+width: 44px; height: 44px; margin-bottom: 12px;
+border-radius: var(--radius-sm);
+display: flex; align-items: center; justify-content: center;
+background: var(--bg-glass);
+}
+.card h3 { font-size: 1rem; margin-bottom: 8px; font-weight: 600; }
+.card p { font-size: 0.82rem; color: var(--text-dim); line-height: 1.6; }
+.card-bar {
+margin-top: 16px; height: 4px; background: rgba(255,255,255,0.08);
+border-radius: 2px; overflow: hidden;
+}
+.card-bar-fill {
+height: 100%; border-radius: 2px; width: 0;
+transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.card.visible .card-bar-fill { width: var(--fill); }
+
+/* QUIZ */
+#quiz-section h2 {
+text-align: center; font-size: 1.3rem; margin-bottom: var(--space-lg);
+background: linear-gradient(90deg, var(--a1), var(--a2));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.quiz-card {
+background: var(--bg-card); border: 1px solid var(--border);
+border-radius: var(--radius); padding: 24px; margin-bottom: var(--space);
+backdrop-filter: blur(8px);
+}
+.quiz-card h3 { font-size: 0.95rem; margin-bottom: 12px; color: var(--a2); }
+.quiz-card label {
+display: block; padding: 10px 14px; margin: 6px 0;
+border: 1px solid var(--border); border-radius: var(--radius-sm);
+cursor: pointer; font-size: 0.85rem; transition: all 0.3s;
+}
+.quiz-card label:hover { border-color: var(--a1); background: var(--bg-glass); }
+.quiz-card input[type="radio"] { display: none; }
+.quiz-card input[type="radio"]:checked + span {}
+.quiz-card label.correct { border-color: #27c93f !important; background: rgba(39,201,63,0.1) !important; color: #27c93f; }
+.quiz-card label.wrong { border-color: #ff5f56 !important; background: rgba(255,95,86,0.1) !important; color: #ff5f56; }
+#quiz-feedback {
+text-align: center; padding: 20px;
+background: var(--bg-card); border: 1px solid var(--border);
+border-radius: var(--radius); display: none;
+}
+#quiz-feedback.show { display: block; }
+#quiz-feedback h3 {
+font-size: 1.1rem; margin-bottom: 8px;
+background: linear-gradient(90deg, var(--a1), var(--a2));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+}
+#quiz-btn {
+display: block; margin: 20px auto 0;
+padding: 12px 32px; background: linear-gradient(135deg, var(--a1), var(--a2));
+border: none; border-radius: var(--radius-sm); color: #fff;
+font-family: var(--font-mono); font-size: 0.9rem; cursor: pointer;
+transition: transform 0.2s, box-shadow 0.2s;
+}
+#quiz-btn:hover { transform: scale(1.03); box-shadow: 0 4px 20px var(--glow); }
+
+/* CODE */
+#code-section h2 {
+text-align: center; font-size: 1.3rem; margin-bottom: var(--space-lg);
+background: linear-gradient(90deg, var(--a1), var(--a2));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.code-block {
+background: #1a1a1a; border: 1px solid var(--border);
+border-radius: var(--radius); overflow: hidden;
+}
+.code-header {
+display: flex; justify-content: space-between; align-items: center;
+padding: 10px 16px; background: rgba(0,0,0,0.3);
+border-bottom: 1px solid var(--border);
+}
+.code-header span { font-size: 0.75rem; color: var(--text-dim); }
+#copy-btn {
+padding: 6px 14px; background: transparent;
+border: 1px solid var(--a1); border-radius: var(--radius-sm);
+color: var(--a1); font-family: var(--font-mono);
+font-size: 0.75rem; cursor: pointer; transition: all 0.3s;
+}
+#copy-btn:hover { background: var(--a1); color: #fff; }
+.code-content {
+padding: 16px; font-size: 0.82rem; line-height: 1.8;
+overflow-x: auto; white-space: pre; color: #e0e0e0;
+}
+.code-content .kw { color: #c792ea; }
+.code-content .fn { color: #82aaff; }
+.code-content .st { color: #c3e88d; }
+.code-content .cm { color: #546e7a; }
+.code-content .op { color: #89ddff; }
+.code-content .nu { color: #f78c6c; }
+.code-content .dc { color: #ffcb6b; }
+
+/* FOOTER */
+#footer {
+text-align: center; padding: var(--space-lg) var(--space);
+border-top: 1px solid var(--border); margin-top: var(--space-lg);
+}
+.footer-brand {
+font-size: 1.5rem; font-weight: 700; margin-bottom: 8px;
+background: linear-gradient(90deg, var(--a1), var(--a2), var(--a1));
+background-size: 200% 100%;
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+animation: gradient-shift 3s ease infinite;
+}
+@keyframes gradient-shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.footer-ts { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; }
+.footer-tag { font-size: 0.9rem; color: var(--a2); font-style: italic; }
+
+@media (max-width: 600px) {
+.cards-grid { grid-template-columns: 1fr; }
+section { padding: var(--space) calc(var(--space) * 0.5); }
+.terminal-body { font-size: 0.78rem; padding: 12px; min-height: 220px; }
+#topbar { font-size: 0.7rem; padding: 0 8px; }
+.topbar-center { gap: 8px; }
+#clock { font-size: 0.7rem; }
+}
+</style>
+</head>
+<body>
+<div id="scroll-progress"></div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+<div class="topbar-left">
+<svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+<rect x="2" y="2" width="28" height="28" rx="6" stroke="#ff6b35" stroke-width="2"/>
+<path d="M8 24V10l5 8 5-8v14" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="24" cy="10" r="2.5" fill="#f7c59f"/>
+</svg>
+<span style="color:var(--a1);font-weight:700;letter-spacing:1px">MiMo OS</span>
+</div>
+<div class="topbar-center">
+<span id="clock">00:00:00</span>
+<div id="battery">
+<div id="battery-bar"><div id="battery-fill" style="width:87%"></div></div>
+<span id="battery-pct">87%</span>
+</div>
+</div>
+<div class="topbar-right">
+<button id="theme-toggle" aria-label="Toggle theme">
+<svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+<svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
+</div>
+</div>
+
+<!-- HERO TERMINAL -->
+<section id="hero">
+<div class="terminal">
+<div class="terminal-header">
+<div class="traffic r"></div>
+<div class="traffic y"></div>
+<div class="traffic g"></div>
+<span class="terminal-title">mimo-sh — boot sequence</span>
+</div>
+<div class="terminal-body" id="terminal-body"></div>
+</div>
+</section>
+
+<!-- RADAR -->
+<section id="radar-section">
+<h2>Capability Profile</h2>
+<div class="radar-wrap">
+<svg id="radar-svg" viewBox="0 0 400 400" fill="none"></svg>
+</div>
+</section>
+
+<!-- TICKER -->
+<div id="ticker-wrap">
+<div id="ticker"></div>
+</div>
+
+<!-- CARDS -->
+<section id="cards-section">
+<h2>Core Features</h2>
+<div class="cards-grid" id="cards-grid"></div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz-section">
+<h2>Reason Like MiMo</h2>
+<div id="quiz-container"></div>
+<div id="quiz-feedback">
+<h3 id="quiz-title"></h3>
+<p id="quiz-msg"></p>
+</div>
+</section>
+
+<!-- CODE -->
+<section id="code-section">
+<h2>Code Showcase</h2>
+<div class="code-block">
+<div class="code-header">
+<span>chain_of_thought.py</span>
+<button id="copy-btn">Copy</button>
+</div>
+<div class="code-content" id="code-content"></div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer id="footer">
+<div class="footer-brand">MiMo OS v2.5</div>
+<div class="footer-ts" id="footer-ts"></div>
+<div class="footer-tag">Small model. Giant reasoning.</div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* CLOCK */
+(function(){
+var el = document.getElementById('clock');
+function tick(){
+var d = new Date();
+el.textContent = [d.getHours(),d.getMinutes(),d.getSeconds()].map(function(v){return v<10?'0'+v:v;}).join(':');
+}
+tick(); setInterval(tick, 1000);
+})();
+
+/* THEME */
+(function(){
+var btn = document.getElementById('theme-toggle');
+var moon = document.getElementById('icon-moon');
+var sun = document.getElementById('icon-sun');
+var stored = localStorage.getItem('mimo-theme');
+if(stored === 'light') document.documentElement.classList.add('light');
+function updateIcons(){
+var isLight = document.documentElement.classList.contains('light');
+moon.style.display = isLight ? 'none' : 'block';
+sun.style.display = isLight ? 'block' : 'none';
+}
+updateIcons();
+btn.addEventListener('click', function(){
+document.documentElement.classList.toggle('light');
+var isLight = document.documentElement.classList.contains('light');
+localStorage.setItem('mimo-theme', isLight ? 'light' : 'dark');
+updateIcons();
+});
+})();
+
+/* BATTERY */
+(function(){
+var fill = document.getElementById('battery-fill');
+var pct = document.getElementById('battery-pct');
+var charge = 87;
+function drain(){
+if(charge > 5) charge -= 0.003;
+var w = Math.max(2, charge);
+fill.style.width = w + '%';
+pct.textContent = Math.round(charge) + '%';
+if(charge <= 15) fill.style.background = '#ff5f56';
+else fill.style.background = '';
+}
+setInterval(drain, 1000);
+})();
+
+/* SCROLL PROGRESS */
+(function(){
+var bar = document.getElementById('scroll-progress');
+window.addEventListener('scroll', function(){
+var h = document.documentElement.scrollHeight - window.innerHeight;
+bar.style.width = h > 0 ? (window.scrollY / h * 100) + '%' : '0';
+});
+})();
+
+/* TERMINAL */
+(function(){
+var lines = [
+'<span class="label">[boot]</span> MiMo v2.5 initializing...',
+'<span class="label">[load]</span> Loading reasoning engine... <span class="val">OK</span>',
+'<span class="label">[spec]</span> <span class="val">Math Reasoning</span> — AIME-grade problem solving',
+'<span class="label">[spec]</span> <span class="val">Code Synthesis</span> — Multi-language generation',
+'<span class="label">[spec]</span> <span class="val">Chain-of-Thought</span> — Step-by-step deliberation',
+'<span class="label">[core]</span> Parameters: <span class="val">7B</span> (Mixture of Experts)',
+'<span class="label">[core]</span> License: <span class="val">Apache 2.0</span>',
+'<span class="label">[done]</span> System ready. Welcome to <span class="val">MiMo OS</span>.',
+];
+var body = document.getElementById('terminal-body');
+var i = 0;
+function addLine(){
+if(i >= lines.length){
+var c = document.createElement('span');
+c.className = 'cursor';
+body.appendChild(c);
+return;
+}
+var div = document.createElement('div');
+div.className = 't-line';
+div.innerHTML = lines[i];
+body.appendChild(div);
+setTimeout(function(){ div.classList.add('show'); }, 30);
+i++;
+setTimeout(addLine, 350 + Math.random()*200);
+}
+setTimeout(addLine, 600);
+})();
+
+/* RADAR */
+(function(){
+var data = [
+{label:'Reasoning', val:90},
+{label:'Coding', val:88},
+{label:'Math', val:92},
+{label:'Creativity', val:70},
+{label:'Speed', val:85},
+{label:'Context', val:72}
+];
+var svg = document.getElementById('radar-svg');
+var cx=200, cy=200, R=150;
+var n = data.length;
+var step = Math.PI*2/n;
+var levels = 5;
+
+function polarXY(angle, r){
+return [cx + r*Math.sin(angle), cy - r*Math.cos(angle)];
+}
+
+function build(){
+var html = '';
+// grid
+for(var l=1; l<=levels; l++){
+var r = R*l/levels;
+var pts = [];
+for(var i=0;i<n;i++){
+var a = i*step;
+var p = polarXY(a, r);
+pts.push(p[0]+','+p[1]);
+}
+html += '<polygon points="'+pts.join(' ')+'" fill="none" stroke="rgba(255,107,53,0.12)" stroke-width="1"/>';
+}
+// axes
+for(var i=0;i<n;i++){
+var a=i*step;
+var p=polarXY(a,R);
+html+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(255,107,53,0.15)" stroke-width="1"/>';
+}
+// data polygon
+var dataPts=[];
+for(var i=0;i<n;i++){
+var a=i*step;
+var r2=R*data[i].val/100;
+var p=polarXY(a,r2);
+dataPts.push(p[0]+','+p[1]);
+}
+html+='<polygon id="radar-poly" points="'+dataPts.join(' ')+
+'" fill="rgba(255,107,53,0.18)" stroke="#ff6b35" stroke-width="2.5" stroke-linejoin="round"/>';
+// dots
+for(var i=0;i<n;i++){
+var a=i*step;
+var r2=R*data[i].val/100;
+var p=polarXY(a,r2);
+html+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="#ff6b35" stroke="#0f0f0f" stroke-width="2"/>';
+}
+// labels
+for(var i=0;i<n;i++){
+var a=i*step;
+var lr=R+28;
+var p=polarXY(a,lr);
+var anchor='middle';
+if(Math.sin(a)>0.1) anchor='start';
+else if(Math.sin(a)<-0.1) anchor='end';
+html+='<text x="'+p[0]+'" y="'+p[1]+'" fill="#e0e0e0" font-size="12" font-family="Consolas,monospace" text-anchor="'+anchor+'" dominant-baseline="central">'+data[i].label+' '+data[i].val+'</text>';
+}
+// center
+html+='<circle cx="'+cx+'" cy="'+cy+'" r="3" fill="#ff6b35"/>';
+svg.innerHTML = html;
+
+// animate
+var poly = document.getElementById('radar-poly');
+var totalLen = poly.getTotalLength();
+poly.style.strokeDasharray = totalLen;
+poly.style.strokeDashoffset = totalLen;
+poly.style.transition = 'stroke-dashoffset 1.8s ease-in-out, fill 1.8s ease-in-out 0.6s';
+setTimeout(function(){
+poly.style.strokeDashoffset = '0';
+poly.style.fill = 'rgba(255,107,53,0.18)';
+}, 200);
+}
+build();
+})();
+
+/* TICKER */
+(function(){
+var items = [
+'7B Parameters','Chain-of-Thought Reasoning','By Xiaomi AI',
+'Math Specialist','Apache 2.0 Licensed','Compact & Efficient',
+'AIME Benchmark Leader','Released 2025','Open Weights'
+];
+var el = document.getElementById('ticker');
+var html = '';
+for(var r=0;r<3;r++){
+for(var i=0;i<items.length;i++){
+html+='<span class="ticker-item"><span class="dot">&#9670;</span>'+items[i]+'</span>';
+}
+}
+el.innerHTML = html;
+})();
+
+/* CARDS */
+(function(){
+var cards = [
+{title:'Chain-of-Thought',desc:'Step-by-step reasoning that breaks complex problems into logical, traceable steps — exactly like a human expert.',color:'#ff6b35',icon:'<path d="M4 6h16M4 12h12M4 18h8" stroke="#ff6b35" stroke-width="2" stroke-linecap="round"/>',fill:95},
+{title:'Math Mastery',desc:'AIME-competing accuracy in algebra, geometry, combinatorics, and number theory with 92/100 scoring.',color:'#ffd166',icon:'<text x="6" y="18" font-size="18" fill="#ffd166" font-family="serif">∑</text><line x1="16" y1="6" x2="28" y2="6" stroke="#ffd166" stroke-width="2"/><line x1="22" y1="6" x2="22" y2="18" stroke="#ffd166" stroke-width="2"/>',fill:92},
+{title:'Code Synthesis',desc:'Generates, explains, and debugs code across Python, JS, C++, and more — with reasoning about every line.',color:'#06d6a0',icon:'<polyline points="8,6 4,12 8,18" stroke="#06d6a0" stroke-width="2" fill="none" stroke-linecap="round"/><polyline points="20,6 24,12 20,18" stroke="#06d6a0" stroke-width="2" fill="none" stroke-linecap="round"/>',fill:88},
+{title:'Compact Size',desc:'Only 7B parameters in a Mixture-of-Experts architecture — runs efficiently without sacrificing depth.',color:'#118ab2',icon:'<rect x="6" y="6" width="20" height="20" rx="3" stroke="#118ab2" stroke-width="2" fill="none"/><rect x="11" y="11" width="10" height="10" rx="1" fill="#118ab2" opacity="0.4"/>',fill:80},
+{title:'Open Weights',desc:'Fully open-source under Apache 2.0. Download, fine-tune, and deploy MiMo v2.5 anywhere.',color:'#a78bfa',icon:'<circle cx="16" cy="12" r="6" stroke="#a78bfa" stroke-width="2" fill="none"/><path d="M16 18v6M12 22h8" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>',fill:100},
+{title:'Fast Inference',desc:'Optimized for speed with speculative decoding and quantization support — sub-second responses.',color:'#f72585',icon:'<polygon points="14,4 26,16 14,12 14,28 2,16 14,20" fill="#f72585" opacity="0.7" stroke="#f72585" stroke-width="1.5"/>',fill:85},
+];
+var grid = document.getElementById('cards-grid');
+var html = '';
+for(var i=0;i<cards.length;i++){
+var c=cards[i];
+html+='<div class="card" style="transition-delay:'+(i*0.1)+'s" data-delay="'+(i*0.1)+'">'+
+'<div class="card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none">'+c.icon+'</svg></div>'+
+'<h3>'+c.title+'</h3>'+
+'<p>'+c.desc+'</p>'+
+'<div class="card-bar"><div class="card-bar-fill" style="--fill:'+c.fill+'%;background:linear-gradient(90deg,'+c.color+','+c.color+'88)"></div></div>'+
+'</div>';
+}
+grid.innerHTML = html;
+
+var observer = new IntersectionObserver(function(entries){
+entries.forEach(function(e){
+if(e.isIntersecting){
+var delay = parseFloat(e.target.dataset.delay)*1000;
+setTimeout(function(){ e.target.classList.add('visible'); }, delay);
+observer.unobserve(e.target);
+}
+});
+},{threshold:0.15});
+document.querySelectorAll('.card').forEach(function(c){ observer.observe(c); });
+})();
+
+/* QUIZ */
+(function(){
+var questions = [
+{
+q:'If f(x) = 2x² − 3x + 1, what is f(3)?',
+opts:['7','10','13','16'],
+ans:1,
+explain:'f(3) = 2(9) − 9 + 1 = 18 − 9 + 1 = 10'
+},
+{
+q:'How many ways can you arrange the letters in "MIMO"?',
+opts:['6','12','24','30'],
+ans:1,
+explain:'4 letters with M repeated twice: 4!/2! = 12'
+},
+{
+q:'What is the sum of all prime numbers less than 20?',
+opts:['62','72','77','82'],
+ans:2,
+explain:'2+3+5+7+11+13+17+19 = 77'
+}
+];
+var answered = 0, score = 0;
+var container = document.getElementById('quiz-container');
+var feedback = document.getElementById('quiz-feedback');
+var fbTitle = document.getElementById('quiz-title');
+var fbMsg = document.getElementById('quiz-msg');
+var html = '';
+for(var i=0;i<questions.length;i++){
+var q=questions[i];
+html+='<div class="quiz-card" id="q'+i+'"><h3>Question '+(i+1)+'</h3><p>'+q.q+'</p>';
+for(var j=0;j<q.opts.length;j++){
+html+='<label onclick="window._quizAnswer('+i+','+j+')" id="q'+i+'o'+j+'"><input type="radio" name="q'+i+'"><span>'+q.opts[j]+'</span></label>';
+}
+html+='</div>';
+}
+container.innerHTML = html;
+
+var locked = {};
+window._quizAnswer = function(qi,oi){
+if(locked[qi]) return;
+locked[qi] = true;
+answered++;
+var q = questions[qi];
+var labels = document.querySelectorAll('#q'+qi+' label');
+if(oi === q.ans){
+score++;
+document.getElementById('q'+qi+'o'+oi).classList.add('correct');
+} else {
+document.getElementById('q'+qi+'o'+oi).classList.add('wrong');
+document.getElementById('q'+qi+'o'+q.ans).classList.add('correct');
+}
+if(answered === questions.length){
+setTimeout(showResult, 800);
+}
+};
+function showResult(){
+var msgs = [
+['Perfect Score!','MiMo is impressed. You think like a 7B reasoning powerhouse. Welcome to the inner circle. 🧠'],
+['Great Job!','Almost MiMo-level reasoning. A few more chain-of-thought steps and you will be there.'],
+['Not Bad!','MiMo suggests more practice. Remember: step-by-step is the way.'],
+['Keep Trying!','Even MiMo started with training data. Every expert was once a beginner.']
+];
+var idx = score === 3 ? 0 : score === 2 ? 1 : score === 1 ? 2 : 3;
+fbTitle.textContent = msgs[idx][0] + ' (' + score + '/3)';
+fbMsg.textContent = msgs[idx][1];
+feedback.classList.add('show');
+feedback.scrollIntoView({behavior:'smooth',block:'center'});
+}
+})();
+
+/* CODE */
+(function(){
+var code = `<span class="cm"># Chain-of-Thought prompt for MiMo v2.5</span>
+<span class="cm"># via OpenAI-compatible API</span>
+
+<span class="kw">import</span> openai
+
+client = openai.<span class="fn">OpenAI</span>(
+    base_url=<span class="st">"https://api.mimo.example/v1"</span>,
+    api_key=<span class="st">"your-api-key"</span>
+)
+
+prompt = <span class="st">"""Solve step by step:
+A store sells notebooks for $4 each.
+If you buy 3 or more, you get 20% off.
+How much do 5 notebooks cost?"""</span>
+
+response = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="st">"mimo-v2.5"</span>,
+    messages=[
+        {<span class="st">"role"</span>: <span class="st">"system"</span>,
+         <span class="st">"content"</span>: <span class="st">"Use chain-of-thought reasoning."</span>},
+        {<span class="st">"role"</span>: <span class="st">"user"</span>,
+         <span class="st">"content"</span>: prompt}
+    ],
+    temperature=<span class="nu">0.7</span>,
+    max_tokens=<span class="nu">512</span>
+)
+
+<span class="fn">print</span>(response.choices[<span class="nu">0</span>].message.content)`;
+document.getElementById('code-content').innerHTML = code;
+
+document.getElementById('copy-btn').addEventListener('click', function(){
+var plain = code.replace(/<[^>]+>/g, '');
+navigator.clipboard.writeText(plain).then(function(){
+document.getElementById('copy-btn').textContent = 'Copied!';
+setTimeout(function(){
+document.getElementById('copy-btn').textContent = 'Copy';
+}, 2000);
+});
+});
+})();
+
+/* FOOTER */
+(function(){
+var ts = document.getElementById('footer-ts');
+var d = new Date();
+ts.textContent = 'Build: ' + d.toISOString().replace('T',' ').slice(0,19) + ' UTC';
+})();
+
+})();
+</script>
+</body>
+</html>

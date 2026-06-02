@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big Pickle OS</title>
+<style>
+
+:root{
+--bg:#070d09;
+--surface:rgba(74,124,89,0.08);
+--surface-hover:rgba(74,124,89,0.15);
+--text:#d4e8d4;
+--text-dim:#7a9a7a;
+--heading:#a8d5a2;
+--border:rgba(74,124,89,0.25);
+--a1:#4a7c59;
+--a2:#a8d5a2;
+--glow:rgba(74,124,89,0.3);
+--card-bg:rgba(74,124,89,0.06);
+font-family:system-ui,-apple-system,sans-serif;
+color:var(--text);
+background:var(--bg);
+letter-spacing:.02em;
+scroll-behavior:smooth}
+
+body.light{
+--bg:#eef4ee;
+--surface:rgba(74,124,89,0.06);
+--surface-hover:rgba(74,124,89,0.12);
+--text:#1a2e1a;
+--text-dim:#5a7a5a;
+--heading:#2d5e3a;
+--border:rgba(74,124,89,0.2);
+--card-bg:rgba(255,255,255,0.7);
+--glow:rgba(74,124,89,0.15)}
+
+*,*::before,*::after{
+box-sizing:border-box;
+margin:0;
+padding:0}
+
+body{
+background:var(--bg);
+color:var(--text);
+min-height:100vh;
+overflow-x:hidden;
+line-height:1.6}
+
+h1,h2,h3,h4{
+letter-spacing:.08em;
+text-transform:uppercase;
+color:var(--heading);
+font-weight:600}
+
+h2{
+font-size:clamp(1.2rem,3vw,1.8rem);
+margin-bottom:2rem;
+text-align:center}
+
+a{
+color:var(--a2);
+text-decoration:none}
+
+::-webkit-scrollbar{
+width:6px}
+
+::-webkit-scrollbar-track{
+background:transparent}
+
+::-webkit-scrollbar-thumb{
+background:var(--a1);
+border-radius:3px}
+
+::selection{
+background:var(--a1);
+color:#fff}
+
+#scroll-progress{
+position:fixed;
+top:0;
+left:0;
+height:3px;
+z-index:1000;
+background:linear-gradient(90deg,var(--a1),var(--a2));
+width:0%}
+
+#bubbles{
+position:fixed;
+inset:0;
+overflow:hidden;
+pointer-events:none;
+z-index:0}
+
+.bubble{
+position:absolute;
+bottom:-20px;
+border-radius:50%;
+background:var(--a1);
+animation:bubble-rise linear infinite;
+opacity:.08}
+
+@keyframes bubble-rise{
+0%{
+transform:translateY(0)translateX(0)scale(1);
+opacity:.1}
+
+50%{
+opacity:.05}
+
+100%{
+transform:translateY(-110vh)translateX(40px)scale(.3);
+opacity:0}
+}
+
+section{
+padding:clamp(2rem,5vw,4rem) clamp(1rem,4vw,3rem);
+position:relative;
+z-index:1}
+
+.container{
+max-width:1100px;
+margin:0 auto}
+
+#topbar{
+position:sticky;
+top:3px;
+z-index:100;
+background:var(--bg);
+border-bottom:1px solid var(--border);
+backdrop-filter:blur(12px);
+padding:.5rem 1.5rem;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:1rem;
+min-height:52px;
+flex-wrap:wrap}
+
+#topbar .brand{
+display:flex;
+align-items:center;
+gap:.6rem;
+font-weight:700;
+font-size:1.1rem;
+letter-spacing:.15em;
+color:var(--heading);
+text-transform:uppercase;
+white-space:nowrap}
+
+#topbar .brand svg{
+width:22px;
+height:40px;
+flex-shrink:0}
+
+#topbar .clock{
+font-family:"Courier New",monospace;
+font-size:1.3rem;
+font-weight:700;
+color:var(--a2);
+letter-spacing:.1em;
+flex:1;
+text-align:center}
+
+.topbar-right{
+display:flex;
+align-items:center;
+gap:1rem}
+
+.brine-widget{
+display:flex;
+align-items:center;
+gap:.5rem;
+font-size:.75rem;
+color:var(--text-dim);
+text-transform:uppercase;
+letter-spacing:.05em}
+
+.brine-bar{
+width:60px;
+height:6px;
+background:var(--border);
+border-radius:3px;
+overflow:hidden}
+
+.brine-fill{
+height:100%;
+background:linear-gradient(90deg,var(--a1),var(--a2));
+border-radius:3px;
+transition:width 1s linear}
+
+.theme-btn{
+background:var(--surface);
+border:1px solid var(--border);
+color:var(--text);
+width:34px;
+height:34px;
+border-radius:8px;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:1rem;
+transition:.2s}
+
+.theme-btn:hover{
+background:var(--surface-hover);
+transform:scale(1.05)}
+
+#hero{
+min-height:85vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+padding:2rem}
+
+.terminal{
+width:100%;
+max-width:680px;
+background:#0a0f0a;
+border-radius:12px;
+border:1px solid rgba(74,124,89,0.3);
+overflow:hidden;
+box-shadow:0 0 40px rgba(74,124,89,0.1)}
+
+.terminal-titlebar{
+background:rgba(0,0,0,0.4);
+padding:10px 14px;
+display:flex;
+align-items:center;
+gap:8px;
+border-bottom:1px solid rgba(74,124,89,0.15)}
+
+.terminal-dot{
+width:12px;
+height:12px;
+border-radius:50%;
+border:1px solid rgba(0,0,0,0.15)}
+
+.terminal-dot.r{
+background:#ff5f57}
+
+.terminal-dot.y{
+background:#ffbd2e}
+
+.terminal-dot.g{
+background:#28c840}
+
+.terminal-title{
+flex:1;
+text-align:center;
+font-size:.7rem;
+color:var(--text-dim);
+letter-spacing:.1em;
+text-transform:uppercase;
+opacity:.5}
+
+.terminal-body{
+padding:18px 20px;
+font-family:"Courier New",monospace;
+font-size:clamp(.8rem,2vw,.95rem);
+color:#98d898;
+min-height:260px;
+max-height:420px;
+overflow-y:auto;
+line-height:1.7;
+white-space:pre-wrap;
+word-break:break-all}
+
+.terminal-body .line{
+opacity:0;
+animation:term-in .3s forwards}
+
+@keyframes term-in{
+0%{
+opacity:0;
+transform:translateY(4px)}
+
+100%{
+opacity:1;
+transform:translateY(0)}
+}
+
+.terminal-body .cursor{
+display:inline-block;
+width:8px;
+height:1.1em;
+background:#98d898;
+animation:blink 1s step-end infinite;
+vertical-align:text-bottom;
+margin-left:2px}
+
+@keyframes blink{
+0%,100%{
+opacity:1}
+
+50%{
+opacity:0}
+}
+
+#radar{
+text-align:center}
+
+.radar-wrap{
+display:inline-block;
+position:relative;
+width:clamp(260px,60vw,420px);
+height:clamp(260px,60vw,420px)}
+
+.radar-wrap svg{
+width:100%;
+height:100%}
+
+.radar-labels{
+font-size:clamp(.55rem,1.2vw,.75rem);
+fill:var(--text-dim);
+letter-spacing:.02em}
+
+.radar-values{
+font-size:clamp(.5rem,1vw,.65rem);
+fill:var(--a2);
+font-weight:700;
+opacity:0;
+transition:opacity .5s}
+
+.radar-values.vis{
+opacity:1}
+
+.radar-grid{
+fill:none;
+stroke:var(--border);
+stroke-width:.5}
+
+.radar-axis{
+stroke:var(--border);
+stroke-width:.5}
+
+.radar-poly{
+fill:var(--a1);
+fill-opacity:.25;
+stroke:var(--a1);
+stroke-width:2}
+
+.radar-dot{
+fill:var(--a2)}
+
+#ticker{
+overflow:hidden;
+padding:1rem 0;
+border-top:1px solid var(--border);
+border-bottom:1px solid var(--border);
+background:var(--surface)}
+
+.ticker-track{
+display:flex;
+animation:ticker-scroll 40s linear infinite;
+width:fit-content;
+white-space:nowrap;
+will-change:transform}
+
+.ticker-track:hover{
+animation-play-state:paused}
+
+.ticker-item{
+display:inline-flex;
+align-items:center;
+padding:0 1.5rem;
+font-size:clamp(.75rem,1.5vw,.9rem);
+color:var(--text-dim);
+letter-spacing:.05em;
+text-transform:uppercase;
+font-weight:500}
+
+.ticker-item .sep{
+color:var(--a1)}
+
+@keyframes ticker-scroll{
+0%{
+transform:translateX(0)}
+
+100%{
+transform:translateX(-50%)}
+}
+
+#features .card-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:1.2rem}
+
+.feature-card{
+background:var(--card-bg);
+backdrop-filter:blur(8px);
+border:1px solid var(--border);
+border-radius:16px;
+padding:1.5rem;
+opacity:0;
+transform:translateY(30px);
+transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1),box-shadow .3s,background .3s;
+position:relative;
+overflow:hidden}
+
+.feature-card.vis{
+opacity:1;
+transform:translateY(0)}
+
+.feature-card:hover{
+box-shadow:0 0 30px var(--glow,#4a7c59);
+background:var(--surface)}
+
+.card-icon{
+margin-bottom:.8rem;
+width:36px;
+height:36px;
+color:var(--glow,#4a7c59)}
+
+.card-icon svg{
+width:100%;
+height:100%;
+fill:none;
+stroke:currentColor;
+stroke-width:1.5;
+stroke-linecap:round;
+stroke-linejoin:round}
+
+.feature-card h3{
+font-size:.85rem;
+margin-bottom:.4rem;
+letter-spacing:.1em}
+
+.feature-card p{
+font-size:.8rem;
+color:var(--text-dim);
+line-height:1.5;
+margin-bottom:1rem}
+
+.prof-bar{
+height:4px;
+background:var(--border);
+border-radius:2px;
+overflow:hidden}
+
+.prof-fill{
+height:100%;
+border-radius:2px;
+background:linear-gradient(90deg,var(--a1),var(--glow,#4a7c59));
+width:0%;
+transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+
+.feature-card.vis .prof-fill{
+width:var(--prof)}
+
+#quiz{
+text-align:center}
+
+.quiz-q{
+background:var(--card-bg);
+border:1px solid var(--border);
+border-radius:16px;
+padding:1.5rem;
+margin-bottom:1.5rem;
+text-align:left;
+max-width:580px;
+margin-left:auto;
+margin-right:auto}
+
+.quiz-q h3{
+font-size:.8rem;
+margin-bottom:.3rem;
+color:var(--a2)}
+
+.quiz-q .q-text{
+font-size:.95rem;
+margin-bottom:1rem;
+line-height:1.5;
+color:var(--text)}
+
+.quiz-opts{
+display:grid;
+gap:.5rem}
+
+.quiz-opts button{
+background:var(--surface);
+border:1px solid var(--border);
+border-radius:10px;
+padding:.7rem 1rem;
+text-align:left;
+color:var(--text);
+font-size:.85rem;
+cursor:pointer;
+transition:.2s;
+font-family:inherit}
+
+.quiz-opts button:hover{
+background:var(--surface-hover);
+border-color:var(--a1)}
+
+.quiz-opts button.correct{
+background:rgba(74,124,89,0.25);
+border-color:var(--a1);
+color:var(--a2)}
+
+.quiz-opts button.wrong{
+background:rgba(180,70,70,0.2);
+border-color:#b44646;
+color:#e88}
+
+.quiz-opts button:disabled{
+cursor:default;
+opacity:.8}
+
+.quiz-feedback{
+font-size:.8rem;
+margin-top:.6rem;
+min-height:1.2em;
+color:var(--text-dim);
+font-style:italic}
+
+.quiz-score{
+margin:2rem auto;
+max-width:580px;
+padding:1.5rem;
+background:var(--card-bg);
+border:1px solid var(--border);
+border-radius:16px}
+
+.quiz-score h3{
+font-size:1.2rem;
+margin-bottom:.5rem}
+
+.quiz-score .roast{
+font-size:1.1rem;
+color:var(--a2);
+margin-bottom:1rem}
+
+.quiz-reset{
+background:var(--a1);
+color:#fff;
+border:none;
+padding:.6rem 1.5rem;
+border-radius:8px;
+cursor:pointer;
+font-size:.85rem;
+font-family:inherit;
+text-transform:uppercase;
+letter-spacing:.05em;
+transition:.2s}
+
+.quiz-reset:hover{
+background:var(--a2);
+color:var(--bg)}
+
+#code{
+text-align:center}
+
+.code-card{
+max-width:620px;
+margin:0 auto;
+background:#0a0f0a;
+border-radius:12px;
+border:1px solid var(--border);
+overflow:hidden;
+text-align:left}
+
+.code-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:.6rem 1rem;
+background:rgba(0,0,0,0.3);
+border-bottom:1px solid var(--border)}
+
+.code-header span{
+font-size:.7rem;
+color:var(--text-dim);
+text-transform:uppercase;
+letter-spacing:.05em}
+
+.copy-btn{
+background:var(--surface);
+border:1px solid var(--border);
+color:var(--text-dim);
+padding:.3rem .8rem;
+border-radius:6px;
+cursor:pointer;
+font-size:.7rem;
+font-family:inherit;
+transition:.2s}
+
+.copy-btn:hover{
+background:var(--surface-hover);
+color:var(--text)}
+
+.copy-btn.copied{
+background:var(--a1);
+color:#fff;
+border-color:var(--a1)}
+
+.code-body{
+padding:1rem;
+overflow-x:auto;
+font-family:"Courier New",monospace;
+font-size:clamp(.7rem,1.5vw,.82rem);
+line-height:1.6;
+color:#d4d4d4}
+
+.code-body .kw{
+color:#569cd6}
+
+.code-body .str{
+color:#ce9178}
+
+.code-body .num{
+color:#b5cea8}
+
+.code-body .op{
+color:#d4d4d4}
+
+footer{
+text-align:center;
+padding:2.5rem 1.5rem;
+border-top:1px solid var(--border);
+position:relative;
+z-index:1}
+
+footer .big{
+font-size:clamp(1.5rem,4vw,2.5rem);
+font-weight:800;
+letter-spacing:.2em;
+background:linear-gradient(135deg,var(--a1),var(--a2),var(--a1));
+background-size:200% 200%;
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+background-clip:text;
+animation:footershine 4s ease infinite}
+
+@keyframes footershine{
+0%,100%{
+background-position:0 50%}
+
+50%{
+background-position:100% 50%}
+}
+
+footer .ts{
+font-size:.7rem;
+color:var(--text-dim);
+margin-top:.5rem;
+letter-spacing:.05em}
+
+footer .tagline{
+font-size:.85rem;
+color:var(--text-dim);
+margin-top:.4rem;
+font-style:italic}
+
+@media(max-width:900px){
+#features .card-grid{
+grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:650px){
+#topbar{
+padding:.5rem 1rem;
+justify-content:center}
+
+#topbar .clock{
+font-size:1rem}
+
+.brine-widget{
+display:none}
+
+#features .card-grid{
+grid-template-columns:1fr}
+
+.terminal-body{
+font-size:.75rem;
+padding:14px}
+
+.feature-card h3{
+font-size:.8rem}
+
+.quiz-q{
+padding:1rem}
+}
+
+@media(max-width:400px){
+#topbar .brand{
+font-size:.85rem}
+
+#topbar .clock{
+font-size:.8rem}
+
+.terminal-body{
+font-size:.65rem}
+}
+
+</style>
+</head>
+<body>
+<div id="scroll-progress"></div>
+<div id="bubbles"></div>
+<header id="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 22 40" aria-label="Pickle">
+      <ellipse cx="11" cy="22" rx="8" ry="18" fill="var(--a1)"/>
+      <ellipse cx="8" cy="22" rx="2.5" ry="13" fill="rgba(90,156,105,0.35)"/>
+      <circle cx="6" cy="10" r="2" fill="rgba(50,90,60,0.6)"/>
+      <circle cx="16" cy="12" r="1.8" fill="rgba(50,90,60,0.6)"/>
+      <circle cx="5" cy="24" r="2" fill="rgba(50,90,60,0.6)"/>
+      <circle cx="17" cy="30" r="2.2" fill="rgba(50,90,60,0.6)"/>
+      <circle cx="14" cy="7" r="1.3" fill="rgba(50,90,60,0.6)"/>
+      <circle cx="7" cy="16" r="1.5" fill="rgba(50,90,60,0.6)"/>
+      <circle cx="15" cy="19" r="1.5" fill="rgba(50,90,60,0.6)"/>
+      <path d="M9,3 Q11,0 13,3" stroke="rgba(90,124,73,0.9)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </svg>
+    Big Pickle
+  </div>
+  <div class="clock" id="clock">00:00:00</div>
+  <div class="topbar-right">
+    <div class="brine-widget">
+      <span>Brine</span>
+      <div class="brine-bar"><div class="brine-fill" id="brine-fill" style="width:42%"></div></div>
+      <span id="brine-pct">42%</span>
+    </div>
+    <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">☀</button>
+  </div>
+</header>
+
+<section id="hero">
+  <div class="terminal">
+    <div class="terminal-titlebar">
+      <span class="terminal-dot r"></span>
+      <span class="terminal-dot y"></span>
+      <span class="terminal-dot g"></span>
+      <span class="terminal-title">big-pickle-terminal</span>
+    </div>
+    <div class="terminal-body" id="term-body"><span class="cursor"></span></div>
+  </div>
+</section>
+
+<section id="radar">
+  <div class="container">
+    <h2>Capability Radar</h2>
+    <div class="radar-wrap">
+      <svg viewBox="0 0 300 300" id="radar-svg">
+        <g id="radar-grid-group"></g>
+        <g id="radar-axes"></g>
+        <g id="radar-data"></g>
+        <g id="radar-labels"></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section id="ticker">
+  <div class="ticker-track" id="ticker-track"></div>
+</section>
+<section id="features">
+  <div class="container">
+    <h2>Core Capabilities</h2>
+    <div class="card-grid">
+      <div class="feature-card" style="--glow:#4a7c59;--prof:92%" data-delay="0">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 3C8 3 5 7 5 11c0 3 2 5 3 6v4h3v-3h2v3h3v-4c1-1 3-3 3-6 0-4-3-8-7-8z"/><path d="M9 11h6M9 14h4"/></svg></div>
+        <h3>Crisp Reasoning</h3>
+        <p>Multi-step logical deduction with pickle-sharp precision. Handles complex chains of thought without getting soggy.</p>
+        <div class="prof-bar"><div class="prof-fill"></div></div>
+      </div>
+      <div class="feature-card" style="--glow:#3d7a5e;--prof:88%" data-delay="100">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 2 3 3 7 3s7-1 7-3V5M5 12c0 2 3 3 7 3s7-1 7-3"/></svg></div>
+        <h3>Deep Brine Context</h3>
+        <p>Massive 128K context window steeped in knowledge. Remembers details from the first byte to the last.</p>
+        <div class="prof-bar"><div class="prof-fill"></div></div>
+      </div>
+      <div class="feature-card" style="--glow:#6b9e6b;--prof:96%" data-delay="200">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M8 6L2 12l6 6M16 6l6 6-6 6"/></svg></div>
+        <h3>Fermented Code</h3>
+        <p>Aged to perfection. Generates production-ready code that has been through the brine and come out clean.</p>
+        <div class="prof-bar"><div class="prof-fill"></div></div>
+      </div>
+      <div class="feature-card" style="--glow:#8bc48b;--prof:85%" data-delay="300">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 6v12M18 6v12"/></svg></div>
+        <h3>Crunchy Math</h3>
+        <p>Numerical reasoning that crunches numbers like fresh pickles. Handles calculus, statistics, and optimization.</p>
+        <div class="prof-bar"><div class="prof-fill"></div></div>
+      </div>
+      <div class="feature-card" style="--glow:#5a9c69;--prof:91%" data-delay="400">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 3 2 5 4 6v3h6v-3c2-1 4-3 4-6 0-4-3-7-7-7z"/><path d="M9 20h6M10 22h4"/></svg></div>
+        <h3>Tangy Creativity</h3>
+        <p>Creative problem-solving with an extra kick. Writes stories, poems, and jokes that do not make you cringe.</p>
+        <div class="prof-bar"><div class="prof-fill"></div></div>
+      </div>
+      <div class="feature-card" style="--glow:#2d9e6b;--prof:83%" data-delay="500">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h6l-2 8 11-13h-6l2-8z"/></svg></div>
+        <h3>Jar-Breaking Speed</h3>
+        <p>Fastest inference in the deli. 100+ tokens per second with zero compromise on quality or accuracy.</p>
+        <div class="prof-bar"><div class="prof-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="quiz">
+  <div class="container">
+    <h2>Are You Pickle-Brained?</h2>
+    <div id="quiz-container"></div>
+  </div>
+</section>
+
+<section id="code">
+  <div class="container">
+    <h2>Code Showcase</h2>
+    <div class="code-card">
+      <div class="code-header">
+        <span>big_pickle_demo.py</span>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+      <div class="code-body"><pre><code id="code-content"><span class="kw">import</span> bigpickle
+
+client <span class="op">=</span> bigpickle<span class="op">.</span>Client(api_key<span class="op">=</span><span class="str">"bp_sk_your_key_here"</span>)
+
+response <span class="op">=</span> client<span class="op">.</span>chat<span class="op">.</span>completions<span class="op">.</span>create(
+    model<span class="op">=</span><span class="str">"big-pickle-v1"</span>,
+    messages<span class="op">=</span>[
+        {
+            <span class="str">"role"</span>: <span class="str">"system"</span>,
+            <span class="str">"content"</span>: <span class="str">"You are BIG PICKLE, a frontier coding model "</span>
+                       <span class="str">"with the soul of a deli pickle. Answer coding "</span>
+                       <span class="str">"questions with extreme competence and mild "</span>
+                       <span class="str">"pickle-related wordplay. No cap, only brine."</span>
+        },
+        {
+            <span class="str">"role"</span>: <span class="str">"user"</span>,
+            <span class="str">"content"</span>: <span class="str">"Write a recursive Fibonacci function"</span>
+        }
+    ],
+    temperature<span class="op">=</span><span class="num">0.7</span>,
+    max_tokens<span class="op">=</span><span class="num">2048</span>
+)
+
+<span class="kw">print</span>(response<span class="op">.</span>choices[<span class="num">0</span>]<span class="op">.</span>message<span class="op">.</span>content)</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="big">BIG PICKLE OS</div>
+  <div class="ts">Built <span id="timestamp"></span></div>
+  <div class="tagline">In a world of bland models, be the pickle.</div>
+</footer>
+<script>
+
+(function(){
+
+var c=document.getElementById('clock');
+
+function t(){
+var d=new Date();
+c.textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')}
+
+t();
+setInterval(t,1000);
+
+var tb=document.getElementById('theme-btn'),is=localStorage.getItem('bp-theme')==='light';
+
+if(is){
+document.body.classList.add('light');
+tb.textContent='\u263E'}
+else{
+tb.textContent='\u2600'}
+
+tb.addEventListener('click',function(){
+document.body.classList.toggle('light');
+var l=document.body.classList.contains('light');
+tb.textContent=l?'\u263E':'\u2600';
+localStorage.setItem('bp-theme',l?'light':'dark')}
+);
+
+var bf=document.getElementById('brine-fill'),bp=document.getElementById('brine-pct'),br=42;
+
+setInterval(function(){
+if(br<99){
+br+=0.5+Math.random()*0.5;
+if(br>99)br=99;
+bf.style.width=Math.round(br)+'%';
+bp.textContent=Math.round(br)+'%'}
+}
+,8000);
+
+var sp=document.getElementById('scroll-progress');
+
+window.addEventListener('scroll',function(){
+var h=document.documentElement.scrollHeight-window.innerHeight;
+sp.style.width=(h>0?(window.scrollY/h)*100:0)+'%'}
+);
+
+var bc=document.getElementById('bubbles');
+
+for(var i=0;
+i<18;
+i++){
+var b=document.createElement('div');
+b.className='bubble';
+var s=4+Math.random()*18;
+b.style.width=s+'px';
+b.style.height=s+'px';
+b.style.left=Math.random()*100+'%';
+b.style.animationDuration=(10+Math.random()*18)+'s';
+b.style.animationDelay=(Math.random()*12)+'s';
+b.style.opacity=0.04+Math.random()*0.12;
+bc.appendChild(b)}
+
+// Terminal
+
+var tbody=document.getElementById('term-body'),boot=['Initializing Big Pickle v1.0...','Loading brine... \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 100%','Fermenting reasoning engine...','Ready. No cap.'],li=0;
+
+var tint=setInterval(function(){
+if(li<boot.length){
+var l=document.createElement('div');
+l.className='line';
+l.textContent='$ '+boot[li];
+tbody.insertBefore(l,tbody.lastChild);
+li++;
+tbody.scrollTop=tbody.scrollHeight}
+else{
+clearInterval(tint)}
+}
+,700);
+
+// Radar chart
+
+(function(){
+
+var svg=document.getElementById('radar-svg'),gg=document.getElementById('radar-grid-group'),ag=document.getElementById('radar-axes'),dg=document.getElementById('radar-data'),lg=document.getElementById('radar-labels'),cx=150,cy=150,rr=120;
+
+var lbs=['Reasoning','Coding','Math','Creativity','Speed','Context'],vals=[88,91,85,94,83,87];
+
+var ang=[-90,-30,30,90,150,210].map(function(a){
+return a*Math.PI/180}
+);
+
+var ns='http://www.w3.org/2000/svg';
+
+for(var l=1;
+l<=10;
+l++){
+var pts=ang.map(function(a){
+var x=cx+rr*(l/10)*Math.cos(a),y=cy+rr*(l/10)*Math.sin(a);
+return x+','+y}
+).join(' ');
+var p=document.createElementNS(ns,'polygon');
+p.setAttribute('points',pts);
+p.setAttribute('class','radar-grid');
+gg.appendChild(p)}
+
+for(var i=0;
+i<6;
+i++){
+var a=ang[i],ex=cx+rr*Math.cos(a),ey=cy+rr*Math.sin(a),li=document.createElementNS(ns,'line');
+li.setAttribute('x1',cx);
+li.setAttribute('y1',cy);
+li.setAttribute('x2',ex);
+li.setAttribute('y2',ey);
+li.setAttribute('class','radar-axis');
+ag.appendChild(li);
+
+var lx=cx+(rr+22)*Math.cos(a),ly=cy+(rr+22)*Math.sin(a),txt=document.createElementNS(ns,'text');
+txt.setAttribute('x',lx);
+txt.setAttribute('y',ly);
+txt.setAttribute('class','radar-labels');
+
+if(Math.abs(lx-cx)<5)txt.setAttribute('text-anchor','middle');
+else if(lx>cx)txt.setAttribute('text-anchor','start');
+else txt.setAttribute('text-anchor','end');
+
+if(ly<cy-5)txt.setAttribute('dominant-baseline','auto');
+else if(ly>cy+5)txt.setAttribute('dominant-baseline','hanging');
+else txt.setAttribute('dominant-baseline','middle');
+
+txt.textContent=lbs[i];
+lg.appendChild(txt)}
+
+var dp=document.createElementNS(ns,'polygon');
+dp.setAttribute('class','radar-poly');
+dg.appendChild(dp);
+
+var dots=[];
+for(var i=0;
+i<6;
+i++){
+var dt=document.createElementNS(ns,'circle');
+dt.setAttribute('class','radar-dot');
+dt.setAttribute('r',3);
+dg.appendChild(dt);
+dots.push(dt)}
+
+var vls=[];
+for(var i=0;
+i<6;
+i++){
+var vt=document.createElementNS(ns,'text');
+vt.setAttribute('class','radar-values');
+vt.textContent=vals[i]+'%';
+dg.appendChild(vt);
+vls.push(vt)}
+
+var animated=false,ro=new IntersectionObserver(function(es){
+es.forEach(function(e){
+if(e.isIntersecting&&!animated){
+animated=true;
+var startT=null;
+function ra(ts){
+if(!startT)startT=ts;
+var p=Math.min(1,(ts-startT)/1200);
+var ez=p*(2-p);
+var pts=[];
+for(var i=0;
+i<6;
+i++){
+var v=vals[i]*ez,x=cx+rr*(v/100)*Math.cos(ang[i]),y=cy+rr*(v/100)*Math.sin(ang[i]);
+pts.push(x+','+y);
+dots[i].setAttribute('cx',x);
+dots[i].setAttribute('cy',y);
+vls[i].setAttribute('x',x+8);
+vls[i].setAttribute('y',y+3);
+vls[i].classList.add('vis')}
+dp.setAttribute('points',pts.join(' '));
+if(p<1)requestAnimationFrame(ra)}
+requestAnimationFrame(ra)}
+}
+)}
+);
+ro.observe(document.getElementById('radar'))
+}
+)();
+
+// Ticker
+
+(function(){
+
+var tt=document.getElementById('ticker-track'),items=['Big Pickle v1.0','Independently Trained','Open Weights','Coding Specialist','No Nonsense','Brine-Optimized','Community Favorite','Ships Fast','Zero Fluff'];
+
+var html='';
+for(var i=0;
+i<items.length;
+i++){
+html+='<span class="ticker-item">'+items[i]+'<span class="sep"> \u00B7</span></span>'}
+tt.innerHTML=html+html;
+
+}
+)();
+
+// Feature cards observer
+
+(function(){
+
+var cards=document.querySelectorAll('.feature-card'),co=new IntersectionObserver(function(es){
+es.forEach(function(e){
+if(e.isIntersecting){
+var d=parseInt(e.target.getAttribute('data-delay'))||0;
+setTimeout(function(){
+e.target.classList.add('vis')}
+,d);
+co.unobserve(e.target)}
+}
+)}
+,{
+threshold:0.15}
+);
+
+cards.forEach(function(c){
+co.observe(c)}
+);
+
+}
+)();
+
+// Quiz
+
+(function(){
+
+var qd=[
+{
+q:'A jar of pickles and a single pickle cost $1.10 total. The jar costs $1.00 more than the single pickle. How much does the single pickle cost?',o:[{
+t:'10\u00A2',c:false}
+,{
+t:'5\u00A2',c:true}
+,{
+t:'15\u00A2',c:false}
+,{
+t:'1\u00A2',c:false}
+],f:'If the pickle is 5\u00A2, the jar is $1.05. Together: $1.10. Classic.'}
+,
+{
+q:'A BIG PICKLE agent has 17 coding tasks. After completing all but 9, how many tasks remain?',o:[{
+t:'8',c:false}
+,{
+t:'17',c:false}
+,{
+t:'9',c:true}
+,{
+t:'0',c:false}
+],f:'"All but 9" means 9 tasks remain. The rest are done.'}
+,
+{
+q:'If 5 BIG PICKLE agents solve 5 bugs in 5 minutes, how many minutes would it take 100 agents to solve 100 bugs?',o:[{
+t:'100',c:false}
+,{
+t:'5',c:true}
+,{
+t:'1',c:false}
+,{
+t:'20',c:false}
+],f:'Each agent solves 1 bug in 5 minutes. 100 agents solve 100 bugs in the same 5 minutes.'}
+
+];
+
+var roasts={
+0:'Your brain is more pickled than the pickles. Yikes.',1:'Half-baked. Like a pickle that did not commit. Try again.',2:'Sharp enough to slice a cucumber. Almost there!',3:'You ARE Big Pickle. Absolute legend. No cap.'}
+;
+
+var qc=document.getElementById('quiz-container'),score=0,answered=0;
+
+function buildQuiz(){
+
+qc.innerHTML='';
+score=0;
+answered=0;
+
+for(var i=0;
+i<qd.length;
+i++){
+var q=qd[i],div=document.createElement('div');
+div.className='quiz-q';
+div.innerHTML='<h3>Question '+(i+1)+' of '+qd.length+'</h3><div class="q-text">'+q.q+'</div><div class="quiz-opts"></div><div class="quiz-feedback"></div>';
+
+var opts=div.querySelector('.quiz-opts'),fb=div.querySelector('.quiz-feedback');
+
+for(var j=0;
+j<q.o.length;
+j++){
+var btn=document.createElement('button');
+btn.textContent=String.fromCharCode(65+j)+'. '+q.o[j].t;
+btn.dataset.correct=q.o[j].c;
+
+btn.addEventListener('click',(function(qi,oi,btn,fb,qdiv){
+return function(){
+if(btn.parentNode.querySelector('button:disabled'))return;
+
+var qdata=qd[qi],correct=qdata.o[oi].c;
+
+if(correct){
+btn.classList.add('correct');
+score++;
+fb.textContent='\u2713 Correct! '+qdata.f}
+ else {
+btn.classList.add('wrong');
+fb.textContent='\u2717 Nope. '+qdata.f;
+btn.parentNode.querySelectorAll('button').forEach(function(b){
+if(b.dataset.correct==='true')b.classList.add('correct')}
+)}
+
+btn.parentNode.querySelectorAll('button').forEach(function(b){
+b.disabled=true}
+);
+answered++;
+
+if(answered===qd.length)showScore()}
+}
+)(i,j,btn,fb,div));
+
+opts.appendChild(btn)}
+qc.appendChild(div)}
+
+}
+
+function showScore(){
+
+var existing=qc.querySelector('.quiz-score');
+if(existing)existing.remove();
+
+var s=document.createElement('div');
+s.className='quiz-score';
+
+s.innerHTML='<h3>You scored '+score+'/'+qd.length+'</h3><div class="roast">'+roasts[score]+'</div><button class="quiz-reset" id="quiz-retry">Try Again</button>';
+
+qc.appendChild(s);
+document.getElementById('quiz-retry').addEventListener('click',function(){
+buildQuiz()}
+)}
+
+buildQuiz();
+
+}
+)();
+
+// Copy button
+
+(function(){
+
+var cb=document.getElementById('copy-btn'),cc=document.getElementById('code-content');
+
+if(cb&&cc){
+cb.addEventListener('click',function(){
+var t=cc.textContent;
+navigator.clipboard.writeText(t).then(function(){
+cb.textContent='Copied!';
+cb.classList.add('copied');
+setTimeout(function(){
+cb.textContent='Copy';
+cb.classList.remove('copied')}
+,2000)}
+)}
+)}
+
+}
+)();
+
+// Timestamp
+
+(function(){
+var ts=document.getElementById('timestamp');
+if(ts){
+var d=new Date();
+ts.textContent=d.toISOString().slice(0,10)+' '+d.toTimeString().slice(0,5)}
+}
+)();
+
+}
+)();
+
+</script>
+</body>
+</html>

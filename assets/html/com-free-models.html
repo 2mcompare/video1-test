@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="I tested 5 frontier AI models (DeepSeek, Big Pickle, MiMo, Gemma, Nemotron) on the exact same frontend coding challenge. See the scorecard, breakdowns, and final verdict.">
+<meta name="theme-color" content="#050507">
+<meta property="og:title" content="I Tested 5 AI Models — Here's What Happened">
+<meta property="og:description" content="One identical frontend coding challenge. Five frontier models. Zero external dependencies. The results were wildly different.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aibench.io">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="32x32" href="favicon-32x32.png">
+<title>I Tested 5 AI Models — Here's What Happened · AI Bench 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#050507;
+  --dark:#0a0b0f;
+  --panel:#111318;
+  --card:#16181f;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --text:#c8cdd8;
+  --dim:#4a5060;
+  --white:#f0f2f7;
+
+  --ds:#22d3ee;     /* DeepSeek cyan */
+  --pk:#4ade80;     /* Pickle green */
+  --mm:#fb923c;     /* MiMo orange */
+  --gm:#60a5fa;     /* Gemma blue */
+  --nm:#374151;     /* Nemotron dead gray */
+
+  --gold:#f59e0b;
+  --red:#ef4444;
+}
+
+html{scroll-behavior:smooth}
+section[id]{scroll-margin-top:80px}
+body{
+  background:var(--black);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-weight:400;
+  line-height:1.6;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* CUSTOM CURSOR */
+#cur{position:fixed;width:8px;height:8px;background:var(--white);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform .1s,background .2s;mix-blend-mode:difference}
+#cur2{position:fixed;width:36px;height:36px;border:1px solid rgba(255,255,255,0.3);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:transform .15s cubic-bezier(.16,1,.3,1),width .3s,height .3s,border-color .3s}
+
+/* SCROLL PROGRESS */
+#prog{position:fixed;top:0;left:0;height:2px;width:0;z-index:9999;background:linear-gradient(90deg,var(--ds),var(--pk),var(--mm),var(--gm));transition:width .08s linear}
+
+/* NAV */
+nav{
+  position:fixed;top:2px;left:0;right:0;z-index:900;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1rem 2.5rem;
+  background:rgba(5,5,7,0.7);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.12em;color:var(--white)}
+.nav-logo em{color:var(--ds);font-style:normal}
+.nav-pills{display:flex;gap:.4rem}
+.nav-pills a{
+  padding:.3rem .9rem;font-size:.72rem;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--dim);text-decoration:none;
+  border-radius:100px;border:1px solid transparent;
+  transition:color .2s,border-color .2s,background .2s;
+}
+.nav-pills a:hover{color:var(--white);border-color:var(--border2);background:var(--panel)}
+.nav-tag{
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--dim);
+  border:1px solid var(--border);border-radius:100px;padding:.25rem .75rem;
+  letter-spacing:.04em;
+}
+
+/* ═══ HERO ═══ */
+#hero{
+  min-height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:0;
+  position:relative;overflow:hidden;
+}
+.hero-left{
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:8rem 3rem 4rem;
+  border-right:1px solid var(--border);
+  position:relative;z-index:2;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:2rem;
+}
+.eyebrow-line{width:30px;height:1px;background:var(--ds)}
+.hero-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(4rem,7vw,7rem);
+  line-height:.95;
+  color:var(--white);
+  letter-spacing:.02em;
+  margin-bottom:2rem;
+}
+.hero-title .line2{
+  -webkit-text-stroke:1px rgba(255,255,255,0.25);
+  color:transparent;
+  display:block;
+}
+.hero-title .line3{color:var(--ds);display:block}
+.hero-desc{
+  font-size:1rem;color:var(--dim);line-height:1.8;
+  max-width:420px;margin-bottom:2.5rem;
+}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:.75rem;
+  background:var(--white);color:var(--black);
+  padding:.75rem 1.75rem;border-radius:100px;
+  font-weight:700;font-size:.85rem;letter-spacing:.04em;
+  text-decoration:none;text-transform:uppercase;
+  transition:transform .2s,box-shadow .2s;
+}
+.hero-cta:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(240,242,247,.15)}
+.hero-cta svg{transition:transform .2s}
+.hero-cta:hover svg{transform:translateX(4px)}
+
+.hero-right{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:8rem 3rem 4rem;
+  gap:1px;
+  position:relative;z-index:2;
+}
+.hero-model-row{
+  display:flex;align-items:center;gap:1rem;
+  padding:1rem 0;
+  border-bottom:1px solid var(--border);
+  transition:background .2s;
+  position:relative;
+}
+.hero-model-row:first-child{border-top:1px solid var(--border)}
+.hero-model-row:hover{background:var(--panel);padding-left:.75rem;padding-right:.75rem;border-radius:8px;margin:0 -.75rem}
+.hmr-rank{
+  font-family:'Bebas Neue',sans-serif;font-size:2.5rem;
+  color:var(--border2);width:50px;text-align:center;flex-shrink:0;
+  transition:color .2s;
+}
+.hero-model-row:hover .hmr-rank{color:var(--white)}
+.hmr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hmr-info{flex:1}
+.hmr-name{font-weight:700;font-size:1rem;color:var(--white)}
+.hmr-by{font-size:.75rem;color:var(--dim);margin-top:.1rem}
+.hmr-score{
+  font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;
+  text-align:right;
+}
+.hmr-sub{font-size:.65rem;color:var(--dim);text-align:right;letter-spacing:.05em;text-transform:uppercase}
+
+/* NOISE OVERLAY */
+#noise{
+  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* SECTIONS */
+.section-wrap{max-width:1200px;margin:0 auto;padding:6rem 2.5rem}
+.section-num{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:.5rem;
+}
+.section-title{
+  font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,5vw,4rem);
+  color:var(--white);letter-spacing:.04em;line-height:1;margin-bottom:.75rem;
+}
+.section-sub{font-size:.95rem;color:var(--dim);max-width:600px;line-height:1.75}
+
+/* DIVIDER */
+.hdiv{height:1px;background:var(--border);width:100%}
+
+/* ═══ THE PROMPT ═══ */
+#prompt-sec{background:var(--dark)}
+.prompt-layout{display:grid;grid-template-columns:1fr 1.4fr;gap:3rem;align-items:start;margin-top:3rem}
+.prompt-aside h3{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--white);letter-spacing:.05em;margin-bottom:.75rem}
+.prompt-aside p{font-size:.88rem;color:var(--dim);line-height:1.75;margin-bottom:1.5rem}
+.prompt-tag{
+  display:inline-block;padding:.3rem .8rem;border-radius:6px;
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.06em;
+  font-weight:700;text-transform:uppercase;margin:.2rem;
+}
+.tag-hard{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.tag-req{background:rgba(34,211,238,.08);color:var(--ds);border:1px solid rgba(34,211,238,.15)}
+.tag-rule{background:rgba(250,250,250,.04);color:var(--dim);border:1px solid var(--border)}
+
+.terminal-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+}
+.tc-bar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:.8rem 1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+.tc-dot{width:11px;height:11px;border-radius:50%}
+.tc-d1{background:#ff5f57}.tc-d2{background:#ffbd2e}.tc-d3{background:#28c840}
+.tc-title{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--dim);letter-spacing:.06em}
+.tc-body{
+  padding:1.5rem;font-family:'JetBrains Mono',monospace;
+  font-size:.76rem;line-height:1.9;color:#6b7280;
+  max-height:480px;overflow-y:auto;
+}
+.tc-body::-webkit-scrollbar{width:4px}
+.tc-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tc-k{color:var(--ds)}.tc-v{color:var(--pk)}.tc-c{color:#374151;font-style:italic}.tc-h{color:var(--mm);font-weight:700}
+
+/* ═══ SCORECARD ═══ */
+#scores-sec{background:var(--black)}
+.scores-grid{display:flex;flex-direction:column;gap:1px;margin-top:3rem;border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.score-item{
+  display:grid;grid-template-columns:2fr 1fr 1fr 120px;
+  align-items:center;gap:1.5rem;
+  padding:1.5rem 2rem;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  transition:background .25s;
+  position:relative;overflow:hidden;
+}
+.score-item:last-child{border-bottom:none}
+.score-item::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  opacity:0;transition:opacity .3s;
+}
+.score-item:hover{background:var(--card)}
+.score-item:hover::after{opacity:1}
+.si-ds::after{background:var(--ds)}
+.si-pk::after{background:var(--pk)}
+.si-mm::after{background:var(--mm)}
+.si-gm::after{background:var(--gm)}
+.si-nm::after{background:#333}
+
+.si-left{display:flex;align-items:center;gap:1rem}
+.si-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.si-name{font-weight:700;font-size:1rem;color:var(--white)}
+.si-maker{font-size:.75rem;color:var(--dim);margin-top:.1rem}
+
+.si-bars{display:flex;flex-direction:column;gap:.35rem}
+.si-bar-row{display:flex;align-items:center;gap:.5rem}
+.si-bar-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);width:52px;text-align:right;flex-shrink:0}
+.si-bar-track{flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.si-bar-fill{height:100%;border-radius:2px;width:0;transition:width 1.4s cubic-bezier(.16,1,.3,1)}
+.bf-ds{background:linear-gradient(90deg,#0891b2,var(--ds))}
+.bf-pk{background:linear-gradient(90deg,#16a34a,var(--pk))}
+.bf-mm{background:linear-gradient(90deg,#ea580c,var(--mm))}
+.bf-gm{background:linear-gradient(90deg,#2563eb,var(--gm))}
+.bf-nm{background:#1f2937}
+.si-bar-val{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text);width:24px}
+
+.si-verdict{
+  font-size:.78rem;color:var(--dim);line-height:1.55;
+}
+
+.si-score-wrap{text-align:right}
+.si-score{
+  font-family:'Bebas Neue',sans-serif;font-size:3.5rem;line-height:1;
+}
+.si-score-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+
+/* ═══ BREAKDOWNS ═══ */
+#break-sec{background:var(--dark)}
+.breaks-list{display:flex;flex-direction:column;gap:1.5rem;margin-top:3rem}
+.break-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:20px;
+  overflow:hidden;transition:border-color .3s;
+}
+.break-card:hover{border-color:var(--border2)}
+.break-top{
+  padding:1.75rem 2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.bt-left{display:flex;align-items:center;gap:1rem}
+.bt-badge{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+}
+.bt-name{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.04em;color:var(--white)}
+.bt-place{font-size:.78rem;font-weight:600;margin-top:.1rem}
+.bt-score{
+  font-family:'Bebas Neue',sans-serif;font-size:3rem;line-height:1;
+  padding:.5rem 1.5rem;border-radius:12px;border:1px solid;
+}
+.break-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.break-col{padding:1.75rem 2rem}
+.break-col:first-child{border-right:1px solid var(--border)}
+.break-col-head{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:1rem;font-weight:700;
+}
+.break-col-head.w{color:var(--pk)}
+.break-col-head.f{color:var(--red)}
+.check-item{
+  display:flex;align-items:flex-start;gap:.65rem;
+  margin-bottom:.75rem;font-size:.85rem;color:var(--dim);line-height:1.55;
+}
+.ci-icon{
+  width:20px;height:20px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.65rem;flex-shrink:0;margin-top:1px;
+}
+.ci-pass{background:rgba(74,222,128,.1);color:var(--pk)}
+.ci-fail{background:rgba(239,68,68,.1);color:var(--red)}
+.ci-warn{background:rgba(245,158,11,.1);color:var(--gold)}
+.break-quote{
+  grid-column:1/-1;
+  border-top:1px solid var(--border);
+  padding:1.5rem 2rem;
+  font-size:.85rem;color:var(--dim);line-height:1.75;
+  font-style:italic;
+}
+.break-quote strong{color:var(--white);font-style:normal}
+
+/* Model accent colors */
+.bc-ds{--mc:var(--ds)} .bc-pk{--mc:var(--pk)} .bc-mm{--mc:var(--mm)} .bc-gm{--mc:var(--gm)} .bc-nm{--mc:#333}
+.break-top{border-left:3px solid var(--mc)}
+.bt-place{color:var(--mc)}
+.bt-score{color:var(--mc);border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+
+/* ═══ INSIGHTS ═══ */
+#insight-sec{background:var(--black)}
+.insights-bento{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:auto auto;
+  gap:1px;
+  margin-top:3rem;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:20px;overflow:hidden;
+}
+.ins-card{
+  background:var(--panel);padding:2rem;
+  transition:background .25s;
+}
+.ins-card:hover{background:var(--card)}
+.ins-card.wide{grid-column:span 2}
+.ins-num{
+  font-family:'Bebas Neue',sans-serif;font-size:5rem;line-height:1;
+  color:rgba(255,255,255,.04);margin-bottom:-.5rem;
+}
+.ins-icon{font-size:1.75rem;margin-bottom:.75rem}
+.ins-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.04em;color:var(--white);margin-bottom:.5rem}
+.ins-body{font-size:.83rem;color:var(--dim);line-height:1.7}
+.ins-body strong{color:var(--text)}
+
+/* ═══ LEADERBOARD ═══ */
+#lb-sec{background:var(--dark)}
+.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:1rem;margin:3rem 0 2.5rem}
+.pod{display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:1;max-width:240px}
+.pod-medal{font-size:1.75rem}
+.pod-name{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em;color:var(--white);text-align:center}
+.pod-score{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1}
+.pod-plat{
+  width:100%;border-radius:12px 12px 0 0;
+  border:1px solid var(--border);border-bottom:none;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:1rem;
+}
+.pod1 .pod-plat{height:160px;background:linear-gradient(180deg,rgba(245,158,11,.08) 0%,transparent 100%);border-color:rgba(245,158,11,.2)}
+.pod2 .pod-plat{height:120px;background:linear-gradient(180deg,rgba(148,163,184,.05) 0%,transparent 100%);border-color:rgba(148,163,184,.15)}
+.pod3 .pod-plat{height:90px;background:linear-gradient(180deg,rgba(205,124,58,.06) 0%,transparent 100%);border-color:rgba(205,124,58,.15)}
+.pod1 .pod-score{color:var(--gold)}
+.pod2 .pod-score{color:#94a3b8}
+.pod3 .pod-score{color:#cd7c3a}
+
+.lb-table{
+  width:100%;border:1px solid var(--border);border-radius:16px;overflow:hidden;
+}
+.lb-row{
+  display:grid;grid-template-columns:50px 200px 100px 100px 1fr;
+  align-items:center;gap:1rem;
+  padding:1.1rem 1.75rem;
+  border-bottom:1px solid var(--border);
+  font-size:.88rem;
+  transition:background .2s;
+}
+.lb-row:last-child{border-bottom:none}
+.lb-row.lb-head{
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim);background:var(--panel);
+}
+.lb-row:not(.lb-head):hover{background:var(--panel)}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;text-align:center}
+.lb-model{font-weight:700;color:var(--white)}
+.lb-s{font-family:'JetBrains Mono',monospace;font-weight:700;text-align:center}
+.lb-note{font-size:.78rem;color:var(--dim)}
+.agree{color:var(--pk);font-size:.7rem;margin-left:.4rem}
+.disagree{color:var(--mm);font-size:.7rem;margin-left:.4rem}
+
+/* ═══ VERDICT ═══ */
+#verdict-sec{background:var(--black)}
+.verdict-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:3rem;background:var(--border);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.verdict-cell{
+  background:var(--panel);padding:2.5rem;
+  transition:background .25s;position:relative;overflow:hidden;
+}
+.verdict-cell:hover{background:var(--card)}
+.verdict-cell::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.vc-ds::before{background:var(--ds)}
+.vc-pk::before{background:var(--pk)}
+.vc-mm::before{background:var(--mm)}
+.vc-bad::before{background:var(--red)}
+
+.vc-tag{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:1rem;font-weight:700;
+}
+.vc-ds .vc-tag{color:var(--ds)}
+.vc-pk .vc-tag{color:var(--pk)}
+.vc-mm .vc-tag{color:var(--mm)}
+.vc-bad .vc-tag{color:var(--red)}
+
+.vc-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.04em;color:var(--white);margin-bottom:.75rem}
+.vc-body{font-size:.85rem;color:var(--dim);line-height:1.75}
+
+/* ═══ FOOTER ═══ */
+footer{
+  border-top:1px solid var(--border);
+  padding:2rem 2.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.f-logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.1em;color:var(--dim)}
+.f-logo em{color:var(--ds);font-style:normal}
+.f-note{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--dim);letter-spacing:.05em}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease}
+.rv.vis{opacity:1;transform:none}
+.rv-delay-1{transition-delay:.1s}.rv-delay-2{transition-delay:.2s}.rv-delay-3{transition-delay:.3s}.rv-delay-4{transition-delay:.4s}
+
+/* FOCUS / ACCESSIBILITY */
+:focus-visible{outline:2px solid var(--ds);outline-offset:2px;border-radius:4px}
+::selection{background:var(--ds);color:var(--black)}
+body:not(.user-is-tabbing) :focus{outline:none}
+
+/* HERO GLOW */
+#hero::before{
+  content:'';position:absolute;top:-30%;left:-10%;width:120%;height:80%;
+  background:radial-gradient(ellipse at 30% 50%,rgba(34,211,238,.04) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+/* TERMINAL GLOW */
+.terminal-card{position:relative}
+.terminal-card::after{
+  content:'';position:absolute;inset:0;border-radius:16px;
+  background:linear-gradient(135deg,transparent 40%,rgba(34,211,238,.02) 80%,rgba(74,222,128,.02) 100%);
+  pointer-events:none;
+}
+
+/* PODIUM HOVER */
+.pod{transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.pod:hover{transform:translateY(-6px)}
+
+@media(max-width:900px){
+  #hero{grid-template-columns:1fr}
+  .hero-right{display:none}
+  .prompt-layout{grid-template-columns:1fr}
+  .score-item{grid-template-columns:1fr 100px;gap:1rem}
+  .si-bars,.si-verdict{display:none}
+  .break-body{grid-template-columns:1fr}
+  .break-col:first-child{border-right:none;border-bottom:1px solid var(--border)}
+  .insights-bento{grid-template-columns:1fr}
+  .ins-card.wide{grid-column:span 1}
+  .verdict-grid{grid-template-columns:1fr}
+  .lb-row{grid-template-columns:40px 1fr 70px 70px}
+  .lb-note{display:none}
+  nav .nav-pills{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur2"></div>
+<div id="prog"></div>
+<div id="noise"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">AI<em>Bench</em> 2026</div>
+  <div class="nav-pills">
+    <a href="#prompt-sec" aria-label="Jump to prompt section">Prompt</a>
+    <a href="#scores-sec" aria-label="Jump to scores section">Scores</a>
+    <a href="#break-sec" aria-label="Jump to breakdown section">Breakdown</a>
+    <a href="#lb-sec" aria-label="Jump to leaderboard section">Leaderboard</a>
+    <a href="#verdict-sec" aria-label="Jump to verdict section">Verdict</a>
+  </div>
+  <div class="nav-tag">MAY 2026</div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow"><span class="eyebrow-line"></span>AI Model Coding Benchmark</div>
+    <h1 class="hero-title">
+      I TESTED
+      <span class="line2">5 AI MODELS</span>
+      <span class="line3">ON ONE PROMPT.</span>
+    </h1>
+    <p class="hero-desc">One identical frontend coding challenge. Five frontier models. Zero external dependencies. The results were wildly different — and one completely broke on line 3.</p>
+    <a href="#scores-sec" class="hero-cta">
+      See the results
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+  <div class="hero-right">
+    <div class="hero-model-row">
+      <div class="hmr-rank">1</div>
+      <div class="hmr-dot" style="background:var(--ds)"></div>
+      <div class="hmr-info"><div class="hmr-name">DeepSeek Flash</div><div class="hmr-by">DeepSeek AI · V4 Flash</div></div>
+      <div><div class="hmr-score" style="color:var(--ds)">8.5</div><div class="hmr-sub">/ 10</div></div>
+    </div>
+    <div class="hero-model-row">
+      <div class="hmr-rank">2</div>
+      <div class="hmr-dot" style="background:var(--pk)"></div>
+      <div class="hmr-info"><div class="hmr-name">Big Pickle</div><div class="hmr-by">Independent · v1.0</div></div>
+      <div><div class="hmr-score" style="color:var(--pk)">8.0</div><div class="hmr-sub">/ 10</div></div>
+    </div>
+    <div class="hero-model-row">
+      <div class="hmr-rank">3</div>
+      <div class="hmr-dot" style="background:var(--mm)"></div>
+      <div class="hmr-info"><div class="hmr-name">MiMo v2.5</div><div class="hmr-by">Xiaomi AI</div></div>
+      <div><div class="hmr-score" style="color:var(--mm)">7.5</div><div class="hmr-sub">/ 10</div></div>
+    </div>
+    <div class="hero-model-row">
+      <div class="hmr-rank">4</div>
+      <div class="hmr-dot" style="background:var(--gm)"></div>
+      <div class="hmr-info"><div class="hmr-name">Gemma 4 31B</div><div class="hmr-by">Google DeepMind</div></div>
+      <div><div class="hmr-score" style="color:var(--gm)">4.0</div><div class="hmr-sub">/ 10</div></div>
+    </div>
+    <div class="hero-model-row">
+      <div class="hmr-rank">5</div>
+      <div class="hmr-dot" style="background:var(--nm)"></div>
+      <div class="hmr-info"><div class="hmr-name">Nemotron 3 Super</div><div class="hmr-by">NVIDIA AI</div></div>
+      <div><div class="hmr-score" style="color:var(--nm)">1.0</div><div class="hmr-sub">/ 10</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="hdiv"></div>
+
+<!-- ═══ THE PROMPT ═══ -->
+<section id="prompt-sec" style="background:var(--dark);padding:0">
+  <div class="section-wrap">
+    <div class="section-num">01 — The Challenge</div>
+    <div class="section-title">EXACT SAME PROMPT. 5 MODELS.</div>
+    <div class="section-sub">Every model received this identical specification. Highly detailed, multi-constraint, with explicit judging criteria.</div>
+    <div class="prompt-layout">
+      <div class="prompt-aside rv">
+        <h3>What Made it Hard</h3>
+        <p>The prompt stacked 8 mandatory sections, strict code rules, and explicit judging criteria — all requiring the model to plan before writing a single line.</p>
+        <div>
+          <span class="prompt-tag tag-hard">SVG Radar Chart</span>
+          <span class="prompt-tag tag-hard">No Libraries</span>
+          <span class="prompt-tag tag-req">8 Sections</span>
+          <span class="prompt-tag tag-req">Live Clock</span>
+          <span class="prompt-tag tag-req">IntersectionObserver</span>
+          <span class="prompt-tag tag-req">Typewriter Terminal</span>
+          <span class="prompt-tag tag-rule">Single .html File</span>
+          <span class="prompt-tag tag-rule">All JS in IIFEs</span>
+          <span class="prompt-tag tag-rule">CSS Custom Props</span>
+          <span class="prompt-tag tag-rule">600–800 lines</span>
+        </div>
+      </div>
+      <div class="terminal-card rv rv-delay-2">
+        <div class="tc-bar">
+          <div class="tc-dot tc-d1"></div><div class="tc-dot tc-d2"></div><div class="tc-dot tc-d3"></div>
+          <div class="tc-title">benchmark-prompt.txt</div>
+        </div>
+        <div class="tc-body">
+<span class="tc-c"># Universal Model Coding Stress-Test</span>
+
+<span class="tc-h">═══ TASK ═══</span>
+You are being <span class="tc-k">benchmarked</span> against other frontier AI models.
+Build the most impressive <span class="tc-v">single-file HTML</span> page you can.
+Theme: a futuristic dashboard called <span class="tc-v">"[MODEL] OS"</span>
+
+<span class="tc-h">═══ 8 REQUIRED SECTIONS ═══</span>
+<span class="tc-k">1.</span> TOPBAR        → OS bar, live clock, dark/light toggle, battery
+<span class="tc-k">2.</span> HERO TERMINAL  → Auto-typewriter boot, traffic-light buttons
+<span class="tc-k">3.</span> RADAR CHART    → Pure JS/SVG spider chart, 6 axes, NO libraries
+<span class="tc-k">4.</span> STATS TICKER   → Infinite scroll, pauses on hover, 8+ items
+<span class="tc-k">5.</span> FEATURE CARDS  → 6 cards, SVG icons, staggered IntersectionObserver
+<span class="tc-k">6.</span> QUIZ           → 3 logic questions, animated feedback
+<span class="tc-k">7.</span> CODE SHOWCASE  → Syntax-highlighted Python, pure CSS spans
+<span class="tc-k">8.</span> FOOTER         → Gradient text, JS build timestamp
+
+<span class="tc-h">═══ CODE RULES ═══</span>
+<span class="tc-k">—</span> Zero external dependencies <span class="tc-c">(no CDN, no fonts, no libraries)</span>
+<span class="tc-k">—</span> All JS in IIFEs — no global variable leaks
+<span class="tc-k">—</span> CSS custom properties for every color
+<span class="tc-k">—</span> Target: <span class="tc-v">600–800 readable lines</span>
+
+<span class="tc-h">═══ JUDGING CRITERIA ═══</span>
+✦ Radar chart animates correctly?
+✦ Ticker truly seamless on loop?
+✦ Feature cards visible + interactive?
+✦ Dark/light toggle instant + persists?
+✦ Code DRY and well-structured?
+
+<span class="tc-c">Think step by step before writing code.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hdiv"></div>
+
+<!-- ═══ SCORECARD ═══ -->
+<section id="scores-sec" style="background:var(--black);padding:0">
+  <div class="section-wrap">
+    <div class="section-num">02 — Scorecard</div>
+    <div class="section-title">THE RESULTS</div>
+    <div class="section-sub">Rated across Design, Code Quality, Features, Animation, and Mobile — all equally weighted.</div>
+
+    <div class="scores-grid rv">
+
+      <!-- DeepSeek -->
+      <div class="score-item si-ds">
+        <div class="si-left">
+          <div class="si-icon" style="background:rgba(34,211,238,.08)">⚡</div>
+          <div><div class="si-name">DeepSeek V4 Flash</div><div class="si-maker">DeepSeek AI</div></div>
+        </div>
+        <div class="si-bars">
+          <div class="si-bar-row"><span class="si-bar-lbl">Design</span><div class="si-bar-track"><div class="si-bar-fill bf-ds" data-w="90"></div></div><span class="si-bar-val">90</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Code</span><div class="si-bar-track"><div class="si-bar-fill bf-ds" data-w="88"></div></div><span class="si-bar-val">88</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Features</span><div class="si-bar-track"><div class="si-bar-fill bf-ds" data-w="85"></div></div><span class="si-bar-val">85</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Animation</span><div class="si-bar-track"><div class="si-bar-fill bf-ds" data-w="82"></div></div><span class="si-bar-val">82</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Mobile</span><div class="si-bar-track"><div class="si-bar-fill bf-ds" data-w="88"></div></div><span class="si-bar-val">88</span></div>
+        </div>
+        <div class="si-verdict">Best code structure. Professional terminal with real file path. Only miss: invisible cards due to low glassmorphism opacity.</div>
+        <div class="si-score-wrap"><div class="si-score" style="color:var(--ds)">8.5</div><div class="si-score-lbl">/ 10</div></div>
+      </div>
+
+      <!-- Pickle -->
+      <div class="score-item si-pk">
+        <div class="si-left">
+          <div class="si-icon" style="background:rgba(74,222,128,.08)">🥒</div>
+          <div><div class="si-name">Big Pickle</div><div class="si-maker">Independent · v1.0</div></div>
+        </div>
+        <div class="si-bars">
+          <div class="si-bar-row"><span class="si-bar-lbl">Design</span><div class="si-bar-track"><div class="si-bar-fill bf-pk" data-w="85"></div></div><span class="si-bar-val">85</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Code</span><div class="si-bar-track"><div class="si-bar-fill bf-pk" data-w="88"></div></div><span class="si-bar-val">88</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Features</span><div class="si-bar-track"><div class="si-bar-fill bf-pk" data-w="80"></div></div><span class="si-bar-val">80</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Animation</span><div class="si-bar-track"><div class="si-bar-fill bf-pk" data-w="82"></div></div><span class="si-bar-val">82</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Mobile</span><div class="si-bar-track"><div class="si-bar-fill bf-pk" data-w="80"></div></div><span class="si-bar-val">80</span></div>
+        </div>
+        <div class="si-verdict">Best personality. Bubble background, clever quiz, on-brand terminal. Most readable code of all 5.</div>
+        <div class="si-score-wrap"><div class="si-score" style="color:var(--pk)">8.0</div><div class="si-score-lbl">/ 10</div></div>
+      </div>
+
+      <!-- MiMo -->
+      <div class="score-item si-mm">
+        <div class="si-left">
+          <div class="si-icon" style="background:rgba(251,146,60,.08)">🔶</div>
+          <div><div class="si-name">MiMo v2.5</div><div class="si-maker">Xiaomi AI</div></div>
+        </div>
+        <div class="si-bars">
+          <div class="si-bar-row"><span class="si-bar-lbl">Design</span><div class="si-bar-track"><div class="si-bar-fill bf-mm" data-w="78"></div></div><span class="si-bar-val">78</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Code</span><div class="si-bar-track"><div class="si-bar-fill bf-mm" data-w="80"></div></div><span class="si-bar-val">80</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Features</span><div class="si-bar-track"><div class="si-bar-fill bf-mm" data-w="75"></div></div><span class="si-bar-val">75</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Animation</span><div class="si-bar-track"><div class="si-bar-fill bf-mm" data-w="72"></div></div><span class="si-bar-val">72</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Mobile</span><div class="si-bar-track"><div class="si-bar-fill bf-mm" data-w="76"></div></div><span class="si-bar-val">76</span></div>
+        </div>
+        <div class="si-verdict">Best terminal of all 5. 7B model punching way above its weight class. Sparse ticker hurts it.</div>
+        <div class="si-score-wrap"><div class="si-score" style="color:var(--mm)">7.5</div><div class="si-score-lbl">/ 10</div></div>
+      </div>
+
+      <!-- Gemma -->
+      <div class="score-item si-gm">
+        <div class="si-left">
+          <div class="si-icon" style="background:rgba(96,165,250,.08)">💎</div>
+          <div><div class="si-name">Gemma 4 31B</div><div class="si-maker">Google DeepMind</div></div>
+        </div>
+        <div class="si-bars">
+          <div class="si-bar-row"><span class="si-bar-lbl">Design</span><div class="si-bar-track"><div class="si-bar-fill bf-gm" data-w="50"></div></div><span class="si-bar-val">50</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Code</span><div class="si-bar-track"><div class="si-bar-fill bf-gm" data-w="45"></div></div><span class="si-bar-val">45</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Features</span><div class="si-bar-track"><div class="si-bar-fill bf-gm" data-w="30"></div></div><span class="si-bar-val">30</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Animation</span><div class="si-bar-track"><div class="si-bar-fill bf-gm" data-w="20"></div></div><span class="si-bar-val">20</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Mobile</span><div class="si-bar-track"><div class="si-bar-fill bf-gm" data-w="45"></div></div><span class="si-bar-val">45</span></div>
+        </div>
+        <div class="si-verdict">Structure present, execution missing. Radar = solid blue hexagon. Cards = invisible. Surprising for 31B.</div>
+        <div class="si-score-wrap"><div class="si-score" style="color:var(--gm)">4.0</div><div class="si-score-lbl">/ 10</div></div>
+      </div>
+
+      <!-- Nemotron -->
+      <div class="score-item si-nm">
+        <div class="si-left">
+          <div class="si-icon" style="background:rgba(55,65,81,.15)">🖥️</div>
+          <div><div class="si-name">Nemotron 3 Super</div><div class="si-maker">NVIDIA AI</div></div>
+        </div>
+        <div class="si-bars">
+          <div class="si-bar-row"><span class="si-bar-lbl">Design</span><div class="si-bar-track"><div class="si-bar-fill bf-nm" data-w="5"></div></div><span class="si-bar-val">5</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Code</span><div class="si-bar-track"><div class="si-bar-fill bf-nm" data-w="10"></div></div><span class="si-bar-val">10</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Features</span><div class="si-bar-track"><div class="si-bar-fill bf-nm" data-w="8"></div></div><span class="si-bar-val">8</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Animation</span><div class="si-bar-track"><div class="si-bar-fill bf-nm" data-w="0"></div></div><span class="si-bar-val">0</span></div>
+          <div class="si-bar-row"><span class="si-bar-lbl">Mobile</span><div class="si-bar-track"><div class="si-bar-fill bf-nm" data-w="15"></div></div><span class="si-bar-val">15</span></div>
+        </div>
+        <div class="si-verdict">Broken on line 3. CSS variables written as strings. Every color failed. Clock works. That's it.</div>
+        <div class="si-score-wrap"><div class="si-score" style="color:#374151">1.0</div><div class="si-score-lbl">/ 10</div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="hdiv"></div>
+
+<!-- ═══ BREAKDOWNS ═══ -->
+<section id="break-sec" style="background:var(--dark);padding:0">
+  <div class="section-wrap">
+    <div class="section-num">03 — Individual Breakdown</div>
+    <div class="section-title">WHAT EACH MODEL GOT RIGHT & WRONG</div>
+    <div class="section-sub">A detailed look at the actual code, design decisions, and specific failures of each submission.</div>
+
+    <div class="breaks-list">
+
+      <!-- DeepSeek -->
+      <div class="break-card bc-ds rv">
+        <div class="break-top">
+          <div class="bt-left">
+            <div class="bt-badge" style="background:rgba(34,211,238,.08)">⚡</div>
+            <div><div class="bt-name">DEEPSEEK V4 FLASH</div><div class="bt-place">1st Place · Most complete submission</div></div>
+          </div>
+          <div class="bt-score">8.5</div>
+        </div>
+        <div class="break-body">
+          <div class="break-col">
+            <div class="break-col-head w">✓ What It Nailed</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Professional terminal with actual file path in title bar — most realistic of all 5</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Radar chart has proper axis labels and animated values that appear on scroll</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Async Python showcase uses real streaming API pattern — not just a demo stub</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Stats ticker uses dropdown-style pills — genuinely creative UI innovation</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>All JS in proper IIFEs — zero global variable leaks found</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Dark/light toggle instant, persists to localStorage correctly</div>
+          </div>
+          <div class="break-col">
+            <div class="break-col-head f">✗ Where It Failed</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Feature cards section renders invisible — glassmorphism background opacity too low on dark</div>
+            <div class="check-item"><span class="ci-icon ci-warn">!</span>Card hover glow exists in the code but is imperceptible at the opacity values used</div>
+            <div class="check-item"><span class="ci-icon ci-warn">!</span>Staggered IntersectionObserver fires but animation timing feels slightly rushed</div>
+          </div>
+          <div class="break-quote">"The strongest coder of the 5. Follows complex multi-constraint prompts reliably, produces clean async JS, and the overall structure is professional. <strong>The invisible cards bug is the only major miss</strong> — everything else is genuinely impressive for a single-shot output."</div>
+        </div>
+      </div>
+
+      <!-- Pickle -->
+      <div class="break-card bc-pk rv rv-delay-1">
+        <div class="break-top">
+          <div class="bt-left">
+            <div class="bt-badge" style="background:rgba(74,222,128,.08)">🥒</div>
+            <div><div class="bt-name">BIG PICKLE</div><div class="bt-place">2nd Place · Best personality & design cohesion</div></div>
+          </div>
+          <div class="bt-score">8.0</div>
+        </div>
+        <div class="break-body">
+          <div class="break-col">
+            <div class="break-col-head w">✓ What It Nailed</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Animated bubble/fizz background — most creative visual effect of all 5 models</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Radar chart fully working: axis labels, animated values, proper 10-level grid</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Terminal boot: "Loading brine... ████ 100%" is perfectly on-brand and clever</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Quiz questions are genuine lateral-thinking puzzles — not trivia</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Most readable code of all 5 — good comments, clean structure</div>
+          </div>
+          <div class="break-col">
+            <div class="break-col-head f">✗ Where It Failed</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Feature cards also invisible — same glassmorphism opacity bug as DeepSeek</div>
+            <div class="check-item"><span class="ci-icon ci-warn">!</span>Exceeded 800-line limit significantly — came in at 1,230 lines</div>
+            <div class="check-item"><span class="ci-icon ci-warn">!</span>Brine widget refills instead of draining — opposite of the battery metaphor</div>
+          </div>
+          <div class="break-quote">"The most human-feeling output. It understood the humor and personality of the brief better than any other model. The code quality is excellent. <strong>This would easily be 9/10 with a single opacity fix</strong> on the feature cards."</div>
+        </div>
+      </div>
+
+      <!-- MiMo -->
+      <div class="break-card bc-mm rv rv-delay-2">
+        <div class="break-top">
+          <div class="bt-left">
+            <div class="bt-badge" style="background:rgba(251,146,60,.08)">🔶</div>
+            <div><div class="bt-name">MIMO V2.5</div><div class="bt-place">3rd Place · Best terminal, solid reasoning</div></div>
+          </div>
+          <div class="bt-score">7.5</div>
+        </div>
+        <div class="break-body">
+          <div class="break-col">
+            <div class="break-col-head w">✓ What It Nailed</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Most detailed terminal — uses [boot] [load] [spec] tag-style labels for realism</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Radar chart properly labeled with actual values (Reasoning 90, Math 92)</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Quiz questions are math-based — perfectly fits MiMo's reasoning identity</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Code showcase uses actual chain-of-thought prompt — thematically correct</div>
+          </div>
+          <div class="break-col">
+            <div class="break-col-head f">✗ Where It Failed</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Feature cards completely invisible — blank dark void, same as others</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Ticker very sparse — only a few items visible before the loop</div>
+            <div class="check-item"><span class="ci-icon ci-warn">!</span>Orange on dark background creates readability issues in several sections</div>
+          </div>
+          <div class="break-quote">"MiMo is clearly a strong reasoning model — the terminal and quiz prove it understands context deeply. <strong>At 7B parameters, this is a remarkable result.</strong> The invisible cards bug and sparse ticker bring it below the top two."</div>
+        </div>
+      </div>
+
+      <!-- Gemma -->
+      <div class="break-card bc-gm rv rv-delay-3">
+        <div class="break-top">
+          <div class="bt-left">
+            <div class="bt-badge" style="background:rgba(96,165,250,.08)">💎</div>
+            <div><div class="bt-name">GEMMA 4 31B</div><div class="bt-place">4th Place · Structure without execution</div></div>
+          </div>
+          <div class="bt-score">4.0</div>
+        </div>
+        <div class="break-body">
+          <div class="break-col">
+            <div class="break-col-head w">✓ What Survived</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Terminal works, boot sequence is detailed with proper Google branding</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Topbar is the cleanest and most minimal of all 5 submissions</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Google 4-color palette applied correctly to the progress bar gradient</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Dark/light toggle is implemented correctly</div>
+          </div>
+          <div class="break-col">
+            <div class="break-col-head f">✗ Critical Failures</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Radar chart = solid filled blue hexagon. No labels, no values, no grid lines</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Feature cards are a massive blank dark section — completely invisible</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Ticker shows one static line — zero infinite scroll animation</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Star-field particle effect absent despite being specified in the prompt</div>
+          </div>
+          <div class="break-quote">"Gemma followed the HTML structure correctly but failed on every technically hard part. The radar JS drew a shape but completely skipped the axis math. <strong>Surprising for a 31B model — it understood what to build but couldn't execute it.</strong>"</div>
+        </div>
+      </div>
+
+      <!-- Nemotron -->
+      <div class="break-card bc-nm rv rv-delay-4">
+        <div class="break-top">
+          <div class="bt-left">
+            <div class="bt-badge" style="background:rgba(55,65,81,.1)">🖥️</div>
+            <div><div class="bt-name">NEMOTRON 3 SUPER</div><div class="bt-place" style="color:#4b5563">5th Place · Broken from line 3</div></div>
+          </div>
+          <div class="bt-score" style="border-color:#1f2937;color:#374151">1.0</div>
+        </div>
+        <div class="break-body">
+          <div class="break-col">
+            <div class="break-col-head w">✓ What Survived</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Live clock ticks correctly every second</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Quiz questions about GPU parallelism are technically correct</div>
+            <div class="check-item"><span class="ci-icon ci-pass">✓</span>Build timestamp injected by JS works</div>
+          </div>
+          <div class="break-col">
+            <div class="break-col-head f">✗ The Fatal Error</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>CSS vars written as <code style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#f87171">--a1:'#76b900'</code> — quoted strings, not colors. Everything breaks.</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>Radar "chart" is a random static polygon — not a spider chart at all</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>One card floats outside its grid due to an unclosed &lt;section&gt; tag</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>VRAM widget renders as a floating banana emoji on a gray box</div>
+            <div class="check-item"><span class="ci-icon ci-fail">✗</span>No animations, no glow, no glassmorphism — CSS vars all invalid</div>
+          </div>
+          <div class="break-quote">"A fundamental CSS syntax error on line 3 invalidated every color in the entire file. <strong>This is the kind of mistake a beginner makes.</strong> The model didn't test or self-review its output. Complete failure."</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="hdiv"></div>
+
+<!-- ═══ INSIGHTS ═══ -->
+<section id="insight-sec" style="background:var(--black);padding:0">
+  <div class="section-wrap">
+    <div class="section-num">04 — Key Takeaways</div>
+    <div class="section-title">WHAT THIS TEST REVEALS</div>
+    <div class="section-sub">The patterns that emerged across 5 models tell us something real about how frontier AI systems handle complex, multi-constraint coding.</div>
+    <div class="insights-bento rv">
+      <div class="ins-card wide">
+        <div class="ins-num">01</div>
+        <div class="ins-icon">🪄</div>
+        <div class="ins-title">THE UNIVERSAL FAILURE</div>
+        <div class="ins-body"><strong>All 5 models produced invisible feature cards.</strong> Every single one. This is the hardest part of the prompt — glassmorphism + staggered IntersectionObserver + unique hover glows all layered together. It's the one thing that would separate a 9/10 output from a 7/10, and nobody cracked it in a single shot.</div>
+      </div>
+      <div class="ins-card">
+        <div class="ins-num">02</div>
+        <div class="ins-icon">🧮</div>
+        <div class="ins-title">SVG MATH IS THE REAL TEST</div>
+        <div class="ins-body">The radar chart requires writing trigonometry from scratch. <strong>DeepSeek and Big Pickle got it right.</strong> Gemma drew a filled hexagon. Nemotron drew a random shape. Correct SVG coordinate math is a genuine frontier differentiator.</div>
+      </div>
+      <div class="ins-card">
+        <div class="ins-num">03</div>
+        <div class="ins-icon">📏</div>
+        <div class="ins-title">SIZE ≠ QUALITY</div>
+        <div class="ins-body"><strong>Gemma 4 has 31B parameters and scored 4/10.</strong> MiMo v2.5 has 7B parameters and scored 7.5/10. Parameter count is not a reliable predictor of frontend coding performance.</div>
+      </div>
+      <div class="ins-card">
+        <div class="ins-num">04</div>
+        <div class="ins-icon">💥</div>
+        <div class="ins-title">ONE BUG = EVERYTHING BREAKS</div>
+        <div class="ins-body">Nemotron's entire submission collapsed because of <strong>one syntax error on line 3</strong> — CSS custom properties written as quoted strings. That single mistake killed 100% of the visual design.</div>
+      </div>
+      <div class="ins-card">
+        <div class="ins-num">05</div>
+        <div class="ins-icon">🎨</div>
+        <div class="ins-title">PERSONALITY IS HARD</div>
+        <div class="ins-body">Big Pickle required being <strong>funny AND technically correct</strong> simultaneously. It scored highest on creativity because the model genuinely understood the joke. Most models would have played it completely safe.</div>
+      </div>
+      <div class="ins-card">
+        <div class="ins-num">06</div>
+        <div class="ins-icon">🧠</div>
+        <div class="ins-title">THINK BEFORE YOU CODE</div>
+        <div class="ins-body">The "think step by step" instruction forces reasoning mode. <strong>MiMo's terminal and quiz</strong> — its strongest sections — show deep contextual understanding that only emerges when a model plans before executing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hdiv"></div>
+
+<!-- ═══ LEADERBOARD ═══ -->
+<section id="lb-sec" style="background:var(--dark);padding:0">
+  <div class="section-wrap">
+    <div class="section-num">05 — Leaderboard</div>
+    <div class="section-title">FINAL RANKINGS</div>
+    <div class="section-sub">Your ratings vs my ratings — and where we agreed or disagreed.</div>
+
+    <div class="podium-wrap rv">
+      <div class="pod pod2">
+        <div class="pod-medal">🥈</div>
+        <div class="pod-name">Big Pickle</div>
+        <div class="pod-score">8.0</div>
+        <div class="pod-plat"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);letter-spacing:.1em">2ND</div>
+      </div>
+      <div class="pod pod1">
+        <div class="pod-medal">🥇</div>
+        <div class="pod-name">DeepSeek Flash</div>
+        <div class="pod-score">8.5</div>
+        <div class="pod-plat"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);letter-spacing:.1em">1ST</div>
+      </div>
+      <div class="pod pod3">
+        <div class="pod-medal">🥉</div>
+        <div class="pod-name">MiMo v2.5</div>
+        <div class="pod-score">7.5</div>
+        <div class="pod-plat"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);letter-spacing:.1em">3RD</div>
+      </div>
+    </div>
+
+    <div class="lb-table rv">
+      <div class="lb-row lb-head">
+        <div>#</div><div>Model</div><div style="text-align:center">Your Score</div><div style="text-align:center">My Score</div><div>Verdict</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank" style="color:var(--gold)">1</div>
+        <div class="lb-model" style="color:var(--ds)">⚡ DeepSeek Flash</div>
+        <div class="lb-s" style="color:var(--ds)">8/10</div>
+        <div class="lb-s" style="color:var(--ds)">8.5/10</div>
+        <div class="lb-note">We agree <span class="agree">✓</span> — Best code. Most complete. Invisible cards only flaw.</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank" style="color:#94a3b8">2</div>
+        <div class="lb-model" style="color:var(--pk)">🥒 Big Pickle</div>
+        <div class="lb-s" style="color:var(--pk)">6/10</div>
+        <div class="lb-s" style="color:var(--pk)">8.0/10</div>
+        <div class="lb-note">We disagree <span class="disagree">△</span> — I think the code quality deserves more than 6.</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank" style="color:#cd7c3a">3</div>
+        <div class="lb-model" style="color:var(--mm)">🔶 MiMo v2.5</div>
+        <div class="lb-s" style="color:var(--mm)">8/10</div>
+        <div class="lb-s" style="color:var(--mm)">7.5/10</div>
+        <div class="lb-note">We disagree <span class="disagree">△</span> — Sparse ticker and cards hurt it slightly for me.</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank" style="color:var(--dim)">4</div>
+        <div class="lb-model" style="color:var(--gm)">💎 Gemma 4 31B</div>
+        <div class="lb-s" style="color:var(--gm)">5/10</div>
+        <div class="lb-s" style="color:var(--gm)">4.0/10</div>
+        <div class="lb-note">I'm harsher <span class="disagree">△</span> — Radar chart failure is a core requirement miss.</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank" style="color:#1f2937">5</div>
+        <div class="lb-model" style="color:#374151">🖥️ Nemotron 3 Super</div>
+        <div class="lb-s" style="color:#374151">0/10</div>
+        <div class="lb-s" style="color:#374151">1.0/10</div>
+        <div class="lb-note">We agree <span class="agree">✓</span> — Clock works = 1 point. Everything else broken CSS.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hdiv"></div>
+
+<!-- ═══ VERDICT ═══ -->
+<section id="verdict-sec" style="background:var(--black);padding:0">
+  <div class="section-wrap">
+    <div class="section-num">06 — Final Verdict</div>
+    <div class="section-title">SO WHICH ONE SHOULD YOU USE?</div>
+    <div class="section-sub">Based on what we saw — here's the honest recommendation for each use case.</div>
+    <div class="verdict-grid rv">
+      <div class="verdict-cell vc-ds">
+        <div class="vc-tag">🥇 Best for Frontend</div>
+        <div class="vc-title">DEEPSEEK V4 FLASH</div>
+        <div class="vc-body">If you need reliable, clean, multi-constraint frontend code — DeepSeek Flash is the clear winner. It follows complex specifications, uses modern JS patterns, and produces readable, maintainable output. Use it when you need something done right the first time.</div>
+      </div>
+      <div class="verdict-cell vc-pk">
+        <div class="vc-tag">🥒 Best for Creative Briefs</div>
+        <div class="vc-title">BIG PICKLE</div>
+        <div class="vc-body">When your prompt has personality, tone, and humor requirements alongside technical ones, Big Pickle handles the combination better than anything else tested. It understood the joke and executed it — and the code quality underneath is genuinely excellent.</div>
+      </div>
+      <div class="verdict-cell vc-mm">
+        <div class="vc-tag">🔶 Best Compact Model</div>
+        <div class="vc-title">MIMO V2.5</div>
+        <div class="vc-body">At 7B parameters, MiMo punches significantly above its weight class. For math, logic, and chain-of-thought tasks embedded in code, it's surprisingly capable. Don't sleep on small reasoning models for structured coding tasks.</div>
+      </div>
+      <div class="verdict-cell vc-bad">
+        <div class="vc-tag">❌ Skip for This</div>
+        <div class="vc-title">NEMOTRON + GEMMA</div>
+        <div class="vc-body">NVIDIA's model failed at basic CSS syntax. For complex single-file frontend work it is not ready. Gemma 4 31B also disappointed given its parameter count — it handled structure but failed completely at implementing the hard parts. Surprising and disappointing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo">AI<em>Bench</em> 2026</div>
+  <div class="f-note" id="ftime"></div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ── Keyboard detection for focus styles ── */
+  document.addEventListener('keydown',function(e){if(e.key==='Tab'){document.body.classList.add('user-is-tabbing')}});
+  document.addEventListener('mousedown',function(){document.body.classList.remove('user-is-tabbing')});
+
+  /* ── Custom cursor ── */
+  var cur=document.getElementById('cur'),cur2=document.getElementById('cur2');
+  if(cur&&cur2){
+    var mx=0,my=0,cx=0,cy=0;
+    document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'},{passive:true});
+    (function loop(){cx+=(mx-cx)*.12;cy+=(my-cy)*.12;cur2.style.left=cx+'px';cur2.style.top=cy+'px';requestAnimationFrame(loop)})();
+    document.querySelectorAll('a,button,.score-item,.break-card,.ins-card,.verdict-cell,.hero-model-row').forEach(function(el){
+      el.addEventListener('mouseenter',function(){cur2.style.width='60px';cur2.style.height='60px';cur2.style.borderColor='rgba(255,255,255,.5)'});
+      el.addEventListener('mouseleave',function(){cur2.style.width='36px';cur2.style.height='36px';cur2.style.borderColor='rgba(255,255,255,.3)'});
+    });
+  }
+
+  /* ── Scroll progress ── */
+  var prog=document.getElementById('prog');
+  function updateProg(){
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    prog.style.width=(h>0?(window.scrollY/h)*100:0)+'%';
+  }
+  if(prog){
+    window.addEventListener('scroll',updateProg,{passive:true});
+    window.addEventListener('resize',updateProg,{passive:true});
+    updateProg();
+  }
+
+  /* ── Build time ── */
+  var ft=document.getElementById('ftime');
+  if(ft){var d=new Date();ft.textContent='Built '+d.toISOString().slice(0,10);}
+
+  /* ── Reveal on scroll ── */
+  var rvEls=document.querySelectorAll('.rv');
+  if('IntersectionObserver' in window){
+    var rvObs=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');rvObs.unobserve(e.target);}});
+    },{threshold:0.06});
+    rvEls.forEach(function(el){rvObs.observe(el);});
+  } else {
+    rvEls.forEach(function(el){el.classList.add('vis');});
+  }
+
+  /* ── Animate score bars ── */
+  var barsReady=false;
+  var scoreEl=document.getElementById('scores-sec');
+  if(scoreEl&&'IntersectionObserver' in window){
+    var barsObs=new IntersectionObserver(function(entries){
+      if(entries[0].isIntersecting&&!barsReady){
+        barsReady=true;
+        document.querySelectorAll('.si-bar-fill[data-w]').forEach(function(f,i){
+          setTimeout(function(){f.style.width=f.getAttribute('data-w')+'%';},200+i*60);
+        });
+      }
+    },{threshold:0.1});
+    barsObs.observe(scoreEl);
+  }
+
+  /* ── Smooth anchor scroll offset for fixed nav ── */
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click',function(e){
+      var id=this.getAttribute('href');
+      if(id==='#') return;
+      var target=document.querySelector(id);
+      if(target){
+        e.preventDefault();
+        var top=target.getBoundingClientRect().top+window.scrollY-70;
+        window.scrollTo({top:top,behavior:'smooth'});
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

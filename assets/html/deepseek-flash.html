@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DeepSeek Flash OS</title>
+<style>
+:root{--a1:#00b4d8;--a2:#0077b6;--a3:#90e0ef;--bg:#080c18;--bg2:#0d1328;--card:rgba(255,255,255,0.04);--card-border:rgba(0,180,216,0.12);--text:#e0e6ed;--text2:#7a8499;--radius-sm:8px;--radius-md:14px;--radius-lg:22px;--font-sans:'Inter',system-ui,-apple-system,sans-serif;--font-mono:'Cascadia Code','Fira Code','JetBrains Mono',monospace;--transition:0.3s cubic-bezier(.4,0,.2,1);--glow:0 0 30px rgba(0,180,216,0.15)}
+[data-theme=light]{--bg:#eef2f7;--bg2:#dce3ed;--card:rgba(255,255,255,0.6);--card-border:rgba(0,180,216,0.2);--text:#0f172a;--text2:#475569;--glow:0 0 30px rgba(0,180,216,0.1)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background var(--transition),color var(--transition)}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,180,216,0.015) 2px,rgba(0,180,216,0.015) 4px);pointer-events:none;z-index:9998;animation:scan 8s linear infinite}
+@keyframes scan{0%{background-position:0 0}100%{background-position:0 100vh}}
+#scroll-progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--a1),var(--a2));z-index:10001;width:0%;transition:width 50ms linear}
+/* topbar */
+.topbar{position:sticky;top:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;background:rgba(8,12,24,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--card-border);transition:background var(--transition)}
+[data-theme=light] .topbar{background:rgba(238,242,247,0.85)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{display:flex;align-items:center;gap:8px}
+.topbar-logo svg{width:22px;height:22px}
+.topbar-logo span{font-size:14px;font-weight:600;letter-spacing:.3px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-right button{background:none;border:none;cursor:pointer;padding:6px;border-radius:var(--radius-sm);color:var(--text2);transition:color var(--transition),background var(--transition);display:flex;align-items:center;gap:6px;font-size:13px}
+.topbar-right button:hover{color:var(--text);background:rgba(255,255,255,0.06)}
+.clock{font-family:var(--font-mono);font-size:13px;color:var(--a1);letter-spacing:.5px;min-width:75px;text-align:right}
+.battery{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);font-family:var(--font-mono)}
+.battery svg{width:18px;height:10px}
+/* sections */
+section{padding:60px 24px;max-width:1200px;margin:0 auto}
+.section-title{font-size:26px;font-weight:700;margin-bottom:8px;letter-spacing:-.5px}
+.section-sub{color:var(--text2);font-size:14px;margin-bottom:36px}
+/* terminal */
+.terminal-wrap{max-width:760px;margin:0 auto 40px}
+.terminal{background:#0a0e1a;border:1px solid rgba(0,180,216,0.2);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--glow);transition:background var(--transition)}
+[data-theme=light] .terminal{background:#1a1e2e}
+.terminal-top{display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.05)}
+.terminal-dot{width:12px;height:12px;border-radius:50%;cursor:pointer;transition:opacity .2s}
+.terminal-dot:hover{opacity:.7}
+.terminal-dot.r{background:#ff5f57}
+.terminal-dot.y{background:#ffbd2e}
+.terminal-dot.g{background:#28c840}
+.terminal-title{font-size:11px;color:var(--text2);margin-left:12px;font-family:var(--font-mono)}
+.terminal-body{padding:20px;max-height:380px;overflow-y:auto;font-family:var(--font-mono);font-size:13px;line-height:1.6;min-height:240px;color:#c5d0e6;white-space:pre-wrap;word-break:break-word;transition:color var(--transition)}
+[data-theme=light] .terminal-body{color:#d0d8ee}
+.terminal-body .cursor{display:inline-block;width:8px;height:15px;background:var(--a1);animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.terminal-body .accent{color:var(--a1)}
+.terminal-body .green{color:#28c840}
+.terminal-body .dim{color:#5a6480}
+/* radar */
+.radar-wrap{text-align:center;max-width:500px;margin:0 auto 20px}
+.radar-wrap svg{width:100%;max-width:360px;height:auto}
+.radar-labels{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 24px;margin-top:8px}
+.radar-labels span{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.radar-labels span::before{content:'';width:8px;height:8px;border-radius:50%;display:inline-block}
+/* ticker */
+.ticker-wrap{overflow:hidden;background:var(--bg2);border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border);padding:14px 0;position:relative;transition:background var(--transition)}
+.ticker-track{display:flex;gap:48px;white-space:nowrap;animation:ticker 36s linear infinite;width:max-content;padding:0 24px}
+.ticker-wrap:hover .ticker-track{animation-play-state:paused}
+.ticker-track span{font-size:13px;color:var(--text2);font-family:var(--font-mono);display:flex;align-items:center;gap:6px}
+.ticker-track span::after{content:'·';color:var(--a1);margin-left:24px;font-weight:700}
+.ticker-track span:last-child::after{display:none}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* cards grid */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:28px 24px;backdrop-filter:blur(12px);transition:transform .4s cubic-bezier(.4,0,.2,1),border-color .4s,box-shadow .4s;opacity:0;transform:translateY(40px);position:relative;overflow:hidden}
+.card.visible{opacity:1;transform:translateY(0)}
+.card:hover{transform:translateY(-6px) scale(1.01);box-shadow:var(--glow)}
+.card-icon{margin-bottom:16px;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(0,180,216,0.08)}
+.card-icon svg{width:22px;height:22px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.card p{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:16px}
+.card-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden}
+.card-bar-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.card:nth-child(1):hover{border-color:#00b4d8;box-shadow:0 0 40px rgba(0,180,216,0.2)}
+.card:nth-child(1) .card-bar-fill{background:#00b4d8;width:98%}
+.card:nth-child(1) .card-icon{background:rgba(0,180,216,0.12)}
+.card:nth-child(2):hover{border-color:#00e676;box-shadow:0 0 40px rgba(0,230,118,0.2)}
+.card:nth-child(2) .card-bar-fill{background:#00e676;width:92%}
+.card:nth-child(2) .card-icon{background:rgba(0,230,118,0.12)}
+.card:nth-child(3):hover{border-color:#7c4dff;box-shadow:0 0 40px rgba(124,77,255,0.2)}
+.card:nth-child(3) .card-bar-fill{background:#7c4dff;width:95%}
+.card:nth-child(3) .card-icon{background:rgba(124,77,255,0.12)}
+.card:nth-child(4):hover{border-color:#ff6d00;box-shadow:0 0 40px rgba(255,109,0,0.2)}
+.card:nth-child(4) .card-bar-fill{background:#ff6d00;width:96%}
+.card:nth-child(4) .card-icon{background:rgba(255,109,0,0.12)}
+.card:nth-child(5):hover{border-color:#f50057;box-shadow:0 0 40px rgba(245,0,87,0.2)}
+.card:nth-child(5) .card-bar-fill{background:#f50057;width:88%}
+.card:nth-child(5) .card-icon{background:rgba(245,0,87,0.12)}
+.card:nth-child(6):hover{border-color:#00e5ff;box-shadow:0 0 40px rgba(0,229,255,0.2)}
+.card:nth-child(6) .card-bar-fill{background:#00e5ff;width:90%}
+.card:nth-child(6) .card-icon{background:rgba(0,229,255,0.12)}
+/* quiz */
+.quiz-wrap{max-width:600px;margin:0 auto}
+.quiz-progress{display:flex;gap:8px;margin-bottom:24px}
+.quiz-progress div{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);transition:background .4s}
+.quiz-progress div.active{background:var(--a1)}
+.quiz-progress div.correct{background:#28c840}
+.quiz-progress div.wrong{background:#ff5f57}
+.quiz-question{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:28px;backdrop-filter:blur(12px);transition:background var(--transition)}
+.quiz-question h4{font-size:16px;font-weight:500;margin-bottom:20px;line-height:1.5}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-options label{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:all .3s;font-size:14px;position:relative}
+.quiz-options label:hover{border-color:var(--a1);background:rgba(0,180,216,0.04)}
+.quiz-options input[type=radio]{appearance:none;width:16px;height:16px;border:2px solid var(--text2);border-radius:50%;position:relative;transition:all .3s;flex-shrink:0}
+.quiz-options input[type=radio]:checked{border-color:var(--a1);background:var(--a1);box-shadow:inset 0 0 0 3px var(--bg)}
+.quiz-options label.correct{border-color:#28c840;background:rgba(40,200,64,0.08);animation:quizPop .4s ease}
+.quiz-options label.wrong{border-color:#ff5f57;background:rgba(255,95,87,0.08);animation:quizShake .4s ease}
+@keyframes quizPop{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+@keyframes quizShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.quiz-next{display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:10px 24px;border:none;border-radius:var(--radius-sm);background:var(--a1);color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .3s,transform .3s;font-family:var(--font-sans)}
+.quiz-next:hover{opacity:.85;transform:translateY(-1px)}
+.quiz-next:disabled{opacity:.3;cursor:default;transform:none}
+.quiz-result{text-align:center;padding:40px 28px;background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-md);backdrop-filter:blur(12px)}
+.quiz-result .score{font-size:48px;font-weight:700;color:var(--a1);margin-bottom:8px}
+.quiz-result .message{font-size:15px;color:var(--text2);line-height:1.5}
+.quiz-result .restart{margin-top:20px;padding:10px 28px;border:none;border-radius:var(--radius-sm);background:var(--a1);color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .3s;font-family:var(--font-sans)}
+.quiz-result .restart:hover{opacity:.85}
+.hidden{display:none!important}
+/* code showcase */
+.code-wrap{max-width:660px;margin:0 auto}
+.code-box{background:#0a0e1a;border:1px solid rgba(0,180,216,0.2);border-radius:var(--radius-md);overflow:hidden;position:relative;transition:background var(--transition)}
+[data-theme=light] .code-box{background:#1a1e2e}
+.code-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.05)}
+.code-lang{font-size:11px;color:var(--text2);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px}
+.code-copy{background:none;border:none;color:var(--text2);cursor:pointer;font-size:12px;padding:4px 10px;border-radius:4px;transition:all .3s;font-family:var(--font-sans);position:relative}
+.code-copy:hover{color:var(--text);background:rgba(255,255,255,0.06)}
+.code-copy.copied{color:#28c840}
+.code-body{padding:20px;overflow-x:auto;font-family:var(--font-mono);font-size:13px;line-height:1.7;color:#c5d0e6;white-space:pre;tab-size:2}
+.code-body .kw{color:#ff79c6}
+.code-body .str{color:#f1fa8c}
+.code-body .cmt{color:#5a6480;font-style:italic}
+.code-body .fn{color:#50fa7b}
+.code-body .dec{color:#8be9fd}
+.code-body .cls{color:#ffb86c}
+.code-body .num{color:#bd93f9}
+.code-body .op{color:#ff79c6}
+.code-body .mod{color:#8be9fd}
+.code-body .built{color:#ffb86c}
+/* footer */
+footer{text-align:center;padding:48px 24px;border-top:1px solid var(--card-border);margin-top:40px}
+footer h2{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--a1),var(--a2),var(--a3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;margin-bottom:8px}
+@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+footer .tagline{font-size:13px;color:var(--text2);letter-spacing:.5px}
+footer .timestamp{font-size:11px;color:var(--text2);margin-top:6px;opacity:.6;font-family:var(--font-mono)}
+/* responsive */
+@media(max-width:640px){
+  .topbar{padding:0 12px}
+  .topbar-logo span{font-size:12px}
+  .clock{font-size:11px;min-width:60px}
+  section{padding:40px 16px}
+  .section-title{font-size:22px}
+  .cards-grid{grid-template-columns:1fr}
+  .card{padding:20px}
+  .quiz-question{padding:20px}
+  .terminal-body{padding:14px;font-size:12px;max-height:300px}
+  .radar-wrap svg{max-width:280px}
+}
+@media(min-width:641px)and (max-width:1024px){
+  .cards-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div id="scroll-progress" role="progressbar" aria-label="Scroll progress"></div>
+
+<header class="topbar" role="banner">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00b4d8"/><stop offset="100%" stop-color="#0077b6"/></linearGradient></defs>
+        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 110-16 8 8 0 010 16z" fill="url(#lg)" opacity=".3"/>
+        <path d="M12 6a6 6 0 100 12 6 6 0 000-12zm0 10a4 4 0 110-8 4 4 0 010 8z" fill="url(#lg)"/>
+        <path d="M12 8l1.5 3H17l-2.5 2 1 3.5L12 14.5 8.5 16.5l1-3.5L7 11h3.5L12 8z" fill="url(#lg)" opacity=".9"/>
+      </svg>
+      <span>DeepSeek Flash OS</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="battery" aria-label="Battery level">
+      <svg viewBox="0 0 24 14" fill="none" aria-hidden="true">
+        <rect x="1" y="1.5" width="20" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <rect x="21" y="4.5" width="2.5" height="5" rx="1" fill="currentColor"/>
+        <rect id="bat-fill" x="3" y="3" width="16" height="8" rx="1.5" fill="currentColor" opacity=".7"/>
+      </svg>
+      <span id="bat-pct">87%</span>
+    </div>
+    <span class="clock" id="live-clock" aria-label="Current time">00:00:00</span>
+    <button id="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme">
+      <svg id="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </div>
+</header>
+
+<main role="main">
+<section id="hero" aria-label="Terminal boot sequence">
+  <div class="terminal-wrap">
+    <div class="terminal" role="terminal">
+      <div class="terminal-top">
+        <span class="terminal-dot r" title="Close"></span>
+        <span class="terminal-dot y" title="Minimize"></span>
+        <span class="terminal-dot g" title="Maximize"></span>
+        <span class="terminal-title">deepseek-flash-os — bash</span>
+      </div>
+      <div class="terminal-body" id="terminal-body">
+        <span id="boot-content"></span><span class="cursor" id="boot-cursor"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="radar" aria-label="Capability radar chart">
+  <h2 class="section-title">Capability Radar</h2>
+  <p class="section-sub">DeepSeek V4 Flash scored across six dimensions</p>
+  <div class="radar-wrap">
+    <svg viewBox="0 0 300 300" id="radar-svg" aria-label="Radar chart" role="img">
+      <defs>
+        <linearGradient id="radar-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00b4d8" stop-opacity=".35"/><stop offset="100%" stop-color="#0077b6" stop-opacity=".15"/></linearGradient>
+      </defs>
+      <g id="radar-grid"></g>
+      <polygon id="radar-data" fill="url(#radar-grad)" stroke="#00b4d8" stroke-width="2" stroke-linejoin="round" opacity=".9"/>
+      <g id="radar-dots"></g>
+      <g id="radar-labels-svg"></g>
+    </svg>
+  </div>
+</section>
+
+<section id="ticker" aria-label="Live statistics ticker">
+  <div class="ticker-wrap">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+</section>
+
+<section id="features" aria-label="Feature cards">
+  <h2 class="section-title">Key Capabilities</h2>
+  <p class="section-sub">What makes DeepSeek V4 Flash a frontier model</p>
+  <div class="cards-grid" id="cards-grid"></div>
+</section>
+
+<section id="quiz" aria-label="Interactive reasoning quiz">
+  <h2 class="section-title">Think at Flash Speed</h2>
+  <p class="section-sub">Test your reasoning against three logic puzzles</p>
+  <div class="quiz-wrap" id="quiz-wrap"></div>
+</section>
+
+<section id="code" aria-label="Code showcase">
+  <h2 class="section-title">API Quickstart</h2>
+  <p class="section-sub">Async streaming with DeepSeek V4 Flash in Python</p>
+  <div class="code-wrap">
+    <div class="code-box">
+      <div class="code-top">
+        <span class="code-lang">Python</span>
+        <button class="code-copy" id="code-copy-btn">Copy</button>
+      </div>
+      <div class="code-body" id="code-body"><span class="cmt">#!/usr/bin/env python3</span>
+<span class="cmt"># DeepSeek V4 Flash — async streaming example</span>
+
+<span class="kw">import</span> <span class="mod">asyncio</span>
+<span class="kw">from</span> <span class="mod">openai</span> <span class="kw">import</span> AsyncOpenAI
+
+<span class="cls">client</span> = AsyncOpenAI(
+    api_key=<span class="str">"sk-deepseek-..."</span>,
+    base_url=<span class="str">"https://api.deepseek.com/v1"</span>,
+)
+
+<span class="kw">async def</span> <span class="fn">stream_reasoning</span>(prompt: <span class="built">str</span>) -> <span class="built">None</span>:
+    response = <span class="kw">await</span> client.chat.completions.create(
+        model=<span class="str">"deepseek-v4-flash"</span>,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}],
+        temperature=<span class="num">0.7</span>,
+        max_tokens=<span class="num">4096</span>,
+        stream=<span class="built">True</span>,
+    )
+    <span class="kw">async for</span> chunk <span class="kw">in</span> response:
+        delta = chunk.choices[<span class="num">0</span>].delta.content
+        <span class="kw">if</span> delta:
+            <span class="built">print</span>(delta, end=<span class="str">""</span>, flush=<span class="built">True</span>)
+
+<span class="kw">if</span> <span class="built">__name__</span> == <span class="str">"__main__"</span>:
+    asyncio.run(stream_reasoning(
+        <span class="str">"Explain quantum entanglement in one haiku."</span>
+    ))
+</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer role="contentinfo">
+  <h2>DeepSeek Flash OS</h2>
+  <p class="tagline">Benchmarked against the frontier</p>
+  <p class="timestamp" id="build-timestamp"></p>
+</footer>
+
+<script>
+/* ── clock ── */
+(function(){
+var clockEl=document.getElementById('live-clock');
+function tick(){var d=new Date();clockEl.textContent=d.toTimeString().slice(0,8)}
+tick();setInterval(tick,1000);
+})();
+
+/* ── battery ── */
+(function(){
+var pct=87,batFill=document.getElementById('bat-fill'),batPct=document.getElementById('bat-pct');
+setInterval(function(){
+pct-=1;if(pct<5)pct=87;
+var w=Math.max(2,(pct/100)*16);
+batFill.setAttribute('width',w);
+batPct.textContent=pct+'%';
+var c=pct>40?'#00b4d8':pct>20?'#ffbd2e':'#ff5f57';
+batFill.setAttribute('stroke','none');
+batFill.style.fill=c;
+},6000);
+})();
+
+/* ── theme ── */
+(function(){
+var btn=document.getElementById('theme-toggle');
+var icon=document.getElementById('theme-icon');
+var theme=localStorage.getItem('df-theme')||'dark';
+if(theme==='light'){document.documentElement.setAttribute('data-theme','light')}
+btn.addEventListener('click',function(){
+var isLight=document.documentElement.getAttribute('data-theme')==='light';
+var next=isLight?'dark':'light';
+document.documentElement.setAttribute('data-theme',next);
+localStorage.setItem('df-theme',next);
+});
+})();
+
+/* ── scroll progress ── */
+(function(){
+var bar=document.getElementById('scroll-progress');
+window.addEventListener('scroll',function(){
+var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+var p=window.scrollY/h*100;
+bar.style.width=p+'%';
+});
+})();
+
+/* ── terminal boot ── */
+(function(){
+var lines=[
+{text:'DeepSeek Flash OS v4.0.0',cls:'accent',delay:120},
+{text:'Loading kernel... OK',cls:'green',delay:60},
+{text:'Initializing neural processing units... OK',cls:'green',delay:80},
+{text:'Loading model weights (284B params)... OK',cls:'green',delay:100},
+{text:'Activating MoE routing... OK',cls:'green',delay:70},
+{text:'',cls:'',delay:40},
+{text:'\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510',cls:'dim',delay:40},
+{text:'\u2502  DeepSeek-V4-Flash                          \u2502',cls:'',delay:30},
+{text:'\u2502  Architecture: Mixture of Experts (MoE)     \u2502',cls:'',delay:30},
+{text:'\u2502  Total Params: 284B | Active: 13B           \u2502',cls:'',delay:30},
+{text:'\u2502  Context: 1,048,576 tokens                  \u2502',cls:'',delay:30},
+{text:'\u2502  License: MIT                               \u2502',cls:'',delay:30},
+{text:'\u2502  Released: April 24, 2026                   \u2502',cls:'',delay:30},
+{text:'\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518',cls:'dim',delay:40},
+{text:'',cls:'',delay:30},
+{text:'System ready. Waiting for input...',cls:'accent',delay:100}
+];
+var container=document.getElementById('boot-content');
+var cursor=document.getElementById('boot-cursor');
+var idx=0,charIdx=0,isDone=false;
+function typeLine(){
+if(idx>=lines.length){isDone=true;return;}
+var line=lines[idx];
+if(line.text===''){
+container.innerHTML+='\n';
+idx++;
+setTimeout(typeLine,line.delay);
+return;
+}
+if(charIdx===0&&idx>0)container.innerHTML+='\n';
+if(charIdx<line.text.length){
+var span=document.createElement('span');
+span.textContent=line.text[charIdx];
+if(line.cls)span.className=line.cls;
+container.appendChild(span);
+charIdx++;
+setTimeout(typeLine,20+Math.random()*30);
+}else{
+charIdx=0;
+idx++;
+setTimeout(typeLine,line.delay);
+}
+}
+typeLine();
+})();
+
+/* ── radar chart ── */
+(function(){
+var svg=document.getElementById('radar-svg');
+var gridG=document.getElementById('radar-grid');
+var dataPoly=document.getElementById('radar-data');
+var dotsG=document.getElementById('radar-dots');
+var labelsG=document.getElementById('radar-labels-svg');
+var cx=150,cy=150,R=100;
+var axes=[
+{label:'Reasoning',val:82,color:'#00b4d8'},
+{label:'Coding',val:85,color:'#50fa7b'},
+{label:'Math',val:84,color:'#ffb86c'},
+{label:'Creativity',val:75,color:'#ff79c6'},
+{label:'Speed',val:97,color:'#8be9fd'},
+{label:'Context',val:90,color:'#bd93f9'}
+];
+var N=axes.length;
+function getPt(i,r){
+var angle=-Math.PI/2+i*2*Math.PI/N;
+return{x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle)};
+}
+// grid rings
+var rings=[20,40,60,80,100];
+rings.forEach(function(r){
+var pts=[];
+for(var i=0;i<N;i++){
+var p=getPt(i,r);
+pts.push(p.x+','+p.y);
+}
+var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+poly.setAttribute('points',pts.join(' '));
+poly.setAttribute('fill','none');
+poly.setAttribute('stroke','rgba(255,255,255,0.06)');
+poly.setAttribute('stroke-width','1');
+gridG.appendChild(poly);
+});
+// axes lines
+for(var i=0;i<N;i++){
+var p=getPt(i,R);
+var line=document.createElementNS('http://www.w3.org/2000/svg','line');
+line.setAttribute('x1',cx);line.setAttribute('y1',cy);
+line.setAttribute('x2',p.x);line.setAttribute('y2',p.y);
+line.setAttribute('stroke','rgba(255,255,255,0.05)');
+line.setAttribute('stroke-width','1');
+gridG.appendChild(line);
+}
+// labels
+for(var i=0;i<N;i++){
+var p=getPt(i,R+18);
+var txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+txt.setAttribute('x',p.x);
+txt.setAttribute('y',p.y);
+txt.setAttribute('text-anchor','middle');
+txt.setAttribute('dominant-baseline','middle');
+txt.setAttribute('fill','#7a8499');
+txt.setAttribute('font-size','10');
+txt.setAttribute('font-family','Inter,system-ui,sans-serif');
+txt.textContent=axes[i].label;
+labelsG.appendChild(txt);
+}
+// target data points
+var targets=[];
+for(var i=0;i<N;i++){
+targets.push(getPt(i,(axes[i].val/100)*R));
+}
+// animation
+var observed=false;
+var animId=null;
+function animateRadar(progress){
+var pts=[];
+for(var i=0;i<N;i++){
+var x=cx+(targets[i].x-cx)*progress;
+var y=cy+(targets[i].y-cy)*progress;
+pts.push(x.toFixed(1)+','+y.toFixed(1));
+}
+dataPoly.setAttribute('points',pts.join(' '));
+// dots
+dotsG.innerHTML='';
+for(var i=0;i<N;i++){
+var x=cx+(targets[i].x-cx)*progress;
+var y=cy+(targets[i].y-cy)*progress;
+var dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+dot.setAttribute('cx',x);dot.setAttribute('cy',y);
+dot.setAttribute('r','3.5');
+dot.setAttribute('fill','#00b4d8');
+dotsG.appendChild(dot);
+}
+}
+function startRadarAnim(){
+var start=null,dur=1400;
+function step(ts){
+if(!start)start=ts;
+var p=Math.min(1,(ts-start)/dur);
+// ease-out cubic
+var ease=1-Math.pow(1-p,3);
+animateRadar(ease);
+if(p<1)animId=requestAnimationFrame(step);
+}
+animId=requestAnimationFrame(step);
+}
+var obs=new IntersectionObserver(function(entries){
+entries.forEach(function(e){
+if(e.isIntersecting&&!observed){
+observed=true;
+startRadarAnim();
+obs.unobserve(e.target);
+}
+});
+},{threshold:0.3});
+obs.observe(svg);
+})();
+
+/* ── ticker ── */
+(function(){
+var items=['284B Total Params','13B Active Params','1M Token Context','MIT Licensed','$0.14/1M Input','$0.28/1M Output','Released Apr 24 2026','MoE Architecture','Huawei Ascend 910C Trained'];
+var track=document.getElementById('ticker-track');
+var html='';
+for(var t=0;t<2;t++){
+items.forEach(function(s){
+html+='<span>'+s+'</span>';
+});
+}
+track.innerHTML=html;
+})();
+
+/* ── feature cards ── */
+(function(){
+var cards=[
+{title:'Lightning Inference',desc:'Sub-100ms first-token latency for real-time chat, code generation, and reasoning tasks.',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',bar:98},
+{title:'Cost Efficiency',desc:'$0.14 per million input tokens — frontier intelligence at a fraction of the cost of comparable models.',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>',bar:92},
+{title:'Long Context',desc:'Native 1M token context window — process entire codebases, books, or multi-hour conversations.',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>',bar:95},
+{title:'MoE Architecture',desc:'Mixture of Experts with 284B total params and only 13B active per token for blazing speed.',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',bar:96},
+{title:'Function Calling',desc:'Reliable structured output for tool use, API orchestration, and agentic workflows.',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',bar:88},
+{title:'JSON Mode',desc:'Guaranteed valid JSON output for structured data extraction and programmatic consumption.',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>',bar:90}
+];
+var grid=document.getElementById('cards-grid');
+cards.forEach(function(c,i){
+var div=document.createElement('div');
+div.className='card';
+div.setAttribute('data-delay',i*100);
+div.innerHTML='<div class="card-icon">'+c.icon+'</div><h3>'+c.title+'</h3><p>'+c.desc+'</p><div class="card-bar"><div class="card-bar-fill"></div></div>';
+grid.appendChild(div);
+});
+var obs=new IntersectionObserver(function(entries){
+entries.forEach(function(e){
+if(e.isIntersecting){
+var d=parseInt(e.target.getAttribute('data-delay'))||0;
+setTimeout(function(){e.target.classList.add('visible')},d);
+obs.unobserve(e.target);
+}
+});
+},{threshold:0.15});
+document.querySelectorAll('.card').forEach(function(c){obs.observe(c)});
+})();
+
+/* ── quiz ── */
+(function(){
+var questions=[
+{q:'If all Bloops are Razzies, and some Razzies are Lazzies, which of the following must be true?',opts:['All Bloops are Lazzies','Some Razzies are Bloops','Some Bloops are Lazzies','None of the above'],ans:1},
+{q:'A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?',opts:['$0.05','$0.10','$0.50','$1.00'],ans:0},
+{q:'If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?',opts:['1 minute','5 minutes','20 minutes','100 minutes'],ans:1}
+];
+var wrap=document.getElementById('quiz-wrap');
+var state={q:0,score:0,done:false};
+function render(){
+if(state.done){
+var msgs=['Your logic circuits need an upgrade. Try rebooting.','Decent start. Even Flash had to train on trillions of tokens.','Strong reasoning. One more correct and you would match V4 Flash.','Flawless. You think at Flash Speed. DeepSeek would be proud.'];
+wrap.innerHTML='<div class="quiz-result"><div class="score">'+state.score+'/3</div><div class="message">'+msgs[state.score]+'</div><button class="restart">Run Again</button></div>';
+wrap.querySelector('.restart').addEventListener('click',function(){state={q:0,score:0,done:false};render();});
+return;
+}
+var html='<div class="quiz-progress">';
+for(var i=0;i<3;i++){
+html+='<div'+(i===state.q?' class="active"':'')+'></div>';
+}
+html+='</div>';
+var q=questions[state.q];
+html+='<div class="quiz-question"><h4>Question '+(state.q+1)+'/'+questions.length+': '+q.q+'</h4><div class="quiz-options">';
+q.opts.forEach(function(o,i){
+html+='<label data-idx="'+i+'"><input type="radio" name="q" value="'+i+'"><span>'+o+'</span></label>';
+});
+html+='</div><button class="quiz-next" disabled>Next</button></div>';
+wrap.innerHTML=html;
+var labels=wrap.querySelectorAll('.quiz-options label');
+var nextBtn=wrap.querySelector('.quiz-next');
+var radios=wrap.querySelectorAll('input[name="q"]');
+var answered=false;
+radios.forEach(function(r){
+r.addEventListener('change',function(){
+if(answered)return;
+answered=true;
+var idx=parseInt(this.value);
+var correct=idx===q.ans;
+labels.forEach(function(l){
+var li=parseInt(l.getAttribute('data-idx'));
+if(li===q.ans)l.classList.add('correct');
+if(li===idx&&!correct)l.classList.add('wrong');
+var inp=l.querySelector('input');
+inp.disabled=true;
+});
+if(correct)state.score++;
+var prog=wrap.querySelectorAll('.quiz-progress div');
+prog[state.q].classList.add(correct?'correct':'wrong');
+nextBtn.disabled=false;
+});
+});
+nextBtn.addEventListener('click',function(){
+state.q++;
+if(state.q>=questions.length)state.done=true;
+render();
+});
+}
+render();
+})();
+
+/* ── code copy ── */
+(function(){
+var btn=document.getElementById('code-copy-btn');
+var body=document.getElementById('code-body');
+var text=body.textContent;
+btn.addEventListener('click',function(){
+navigator.clipboard.writeText(text).then(function(){
+btn.textContent='Copied!';
+btn.classList.add('copied');
+setTimeout(function(){btn.textContent='Copy';btn.classList.remove('copied')},2000);
+}).catch(function(){
+var ta=document.createElement('textarea');
+ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+document.body.appendChild(ta);ta.select();document.execCommand('copy');
+document.body.removeChild(ta);
+btn.textContent='Copied!';
+btn.classList.add('copied');
+setTimeout(function(){btn.textContent='Copy';btn.classList.remove('copied')},2000);
+});
+});
+})();
+
+/* ── footer timestamp ── */
+(function(){
+var el=document.getElementById('build-timestamp');
+el.textContent='Built on '+(new Date().toISOString().replace('T',' at ').slice(0,19))+' by DeepSeek Flash OS';
+})();
+</script>
+</body>
+</html>

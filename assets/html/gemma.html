@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemma 4 | OS Dashboard</title>
+    <style>
+        :root {
+            /* Google Brand Colors */
+            --google-blue: #4285f4;
+            --google-green: #34a853;
+            --google-red: #ea4335;
+            --google-yellow: #fbbc04;
+            
+            /* Dark Theme (Default) */
+            --bg: #080e1a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #e0e6ed;
+            --text-dim: #94a3b8;
+            --accent-glow: rgba(66, 133, 244, 0.3);
+            --terminal-bg: #020617;
+            --progress-bar: linear-gradient(90deg, var(--google-blue), var(--google-green), var(--google-yellow), var(--google-red));
+        }
+
+        [data-theme="light"] {
+            --bg: #f8f9fa;
+            --card-bg: rgba(0, 0, 0, 0.03);
+            --card-border: rgba(0, 0, 0, 0.1);
+            --text-main: #202124;
+            --text-dim: #5f6368;
+            --accent-glow: rgba(66, 133, 244, 0.1);
+            --terminal-bg: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            line-height: 1.6;
+        }
+
+        /* Scroll Progress Bar */
+        #scroll-progress {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 3px;
+            background: transparent; z-index: 1000;
+        }
+        #progress-fill {
+            height: 100%; width: 0%;
+            background: var(--progress-bar);
+        }
+
+        /* Background Particles */
+        .particle-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+        .particle {
+            position: absolute; background: var(--google-blue);
+            border-radius: 50%; opacity: 0.3;
+            animation: drift linear infinite;
+        }
+        @keyframes drift {
+            from { transform: translateY(0) translateX(0); }
+            to { transform: translateY(-100vh) translateX(20px); }
+        }
+
+        /* Topbar */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.75rem 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: -0.5px; font-size: 1.2rem; }
+        .logo-svg { width: 28px; height: 28px; fill: var(--google-blue); }
+        .top-widgets { display: flex; align-items: center; gap: 2rem; font-size: 0.85rem; font-family: monospace; }
+        .tpu-widget { color: var(--google-green); }
+        .theme-toggle {
+            background: none; border: 1px solid var(--card-border);
+            color: var(--text-main); cursor: pointer; padding: 4px 12px;
+            border-radius: 20px; transition: 0.2s;
+        }
+        .theme-toggle:hover { background: var(--card-border); }
+
+        /* Sections Layout */
+        main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+        section { margin-bottom: 6rem; opacity: 0; transform: translateY(20px); transition: 0.8s ease-out; }
+        section.visible { opacity: 1; transform: translateY(0); }
+
+        /* Hero Terminal */
+        .terminal-window {
+            background: var(--terminal-bg);
+            border-radius: 12px; border: 1px solid var(--card-border);
+            overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .terminal-header {
+            background: rgba(255,255,255,0.05); padding: 10px 15px;
+            display: flex; gap: 8px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: var(--google-red); } .yellow { background: var(--google-yellow); } .green { background: var(--google-green); }
+        .terminal-body { padding: 20px; font-family: 'Courier New', monospace; font-size: 0.9rem; min-height: 200px; color: #d1d5db; }
+        .cursor { display: inline-block; width: 8px; height: 18px; background: var(--google-blue); animation: blink 1s infinite; vertical-align: middle; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Radar Chart */
+        .radar-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 2rem; background: var(--card-bg); border-radius: 24px;
+        }
+        .radar-svg { max-width: 400px; width: 100%; height: auto; }
+
+        /* Ticker */
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background: var(--card-bg);
+            border-y: 1px solid var(--card-border); padding: 12px 0;
+            white-space: nowrap; position: relative;
+        }
+        .ticker-content {
+            display: inline-block; animation: ticker 40s linear infinite;
+            font-size: 0.9rem; font-weight: 500; color: var(--text-dim);
+        }
+        .ticker-content:hover { animation-play-state: paused; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* Feature Cards */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;
+        }
+        .feature-card {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            padding: 2rem; border-radius: 20px; position: relative; overflow: hidden;
+            transition: 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-5px); border-color: var(--google-blue); }
+        .feature-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
+            background: var(--accent-glow);
+        }
+        .feature-icon { width: 40px; height: 40px; margin-bottom: 1.5rem; }
+        .proficiency-bar {
+            height: 4px; width: 100%; background: rgba(255,255,255,0.1);
+            margin-top: 1.5rem; border-radius: 2px; overflow: hidden;
+        }
+        .proficiency-fill { height: 100%; width: 0; transition: 1.5s ease-out; }
+
+        /* Quiz */
+        .quiz-container {
+            background: var(--card-bg); border-radius: 24px; padding: 2.5rem;
+            border: 1px solid var(--card-border);
+        }
+        .quiz-question { margin-bottom: 2rem; display: none; }
+        .quiz-question.active { display: block; animation: fadeIn 0.5s; }
+        .quiz-options { display: grid; gap: 10px; margin-top: 1.5rem; }
+        .quiz-btn {
+            padding: 12px 20px; border-radius: 10px; border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.05); color: var(--text-main); cursor: pointer;
+            text-align: left; transition: 0.2s;
+        }
+        .quiz-btn:hover { background: var(--google-blue); color: white; }
+        #quiz-result { text-align: center; display: none; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Code Showcase */
+        .tabs { display: flex; gap: 10px; margin-bottom: 1rem; }
+        .tab-btn {
+            background: none; border: none; color: var(--text-dim); padding: 8px 16px;
+            cursor: pointer; font-size: 0.9rem; border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active { color: var(--google-blue); border-bottom-color: var(--google-blue); }
+        .code-block-wrap { position: relative; }
+        pre {
+            background: #0f172a; padding: 1.5rem; border-radius: 12px;
+            overflow-x: auto; font-size: 0.85rem; color: #e2e8f0;
+        }
+        .copy-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;
+        }
+        .token-kw { color: #c678dd; } .token-str { color: #98c379; } .token-fn { color: #61afef; }
+
+        /* Footer */
+        footer {
+            text-align: center; padding: 4rem 2rem; border-top: 1px solid var(--card-border);
+            margin-top: 4rem;
+        }
+        .footer-logo {
+            font-size: 2rem; font-weight: 800;
+            background: linear-gradient(90deg, var(--google-blue), var(--google-green), var(--google-yellow));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: gradient-flow 5s infinite linear;
+        }
+        @keyframes gradient-flow { 0% { background-position: 0%; } 100% { background-position: 200%; } }
+        .tagline { color: var(--text-dim); margin-top: 0.5rem; font-size: 0.9rem; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header { padding: 0.75rem 1rem; flex-direction: column; gap: 10px; }
+            .top-widgets { gap: 1rem; font-size: 0.75rem; }
+            main { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scroll-progress"><div id="progress-fill"></div></div>
+    
+    <div class="particle-container" id="particles"></div>
+
+    <header>
+        <div class="brand">
+            <svg class="logo-svg" viewBox="0 0 100 100">
+                <path d="M50 5 L90 50 L50 95 L10 50 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                <path d="M50 20 L75 50 L50 80 L25 50 Z" fill="currentColor"/>
+            </svg>
+            GEMMA 4
+        </div>
+        <div class="top-widgets">
+            <div id="clock">00:00:00</div>
+            <div class="tpu-widget">TPU LOAD: <span id="tpu-val">42</span>%</div>
+            <button class="theme-toggle" id="theme-btn">Light Mode</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO TERMINAL -->
+        <section id="hero" class="visible">
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="terminal-body" id="terminal-content"></div>
+            </div>
+        </section>
+
+        <!-- CAPABILITY RADAR -->
+        <section id="capabilities">
+            <h2 style="text-align:center; margin-bottom: 2rem;">Model Capability Profile</h2>
+            <div class="radar-container">
+                <svg class="radar-svg" viewBox="0 0 400 400" id="radar-svg">
+                    <!-- Grid Lines -->
+                    <circle cx="200" cy="200" r="40" fill="none" stroke="var(--card-border)" />
+                    <circle cx="200" cy="200" r="80" fill="none" stroke="var(--card-border)" />
+                    <circle cx="200" cy="200" r="120" fill="none" stroke="var(--card-border)" />
+                    <circle cx="200" cy="200" r="160" fill="none" stroke="var(--card-border)" />
+                    <!-- Axis Lines -->
+                    <line x1="200" y1="200" x2="200" y2="40" stroke="var(--card-border)" />
+                    <line x1="200" y1="200" x2="360" y2="200" stroke="var(--card-border)" />
+                    <line x1="200" y1="200" x2="280" y2="340" stroke="var(--card-border)" />
+                    <line x1="200" y1="200" x2="120" y2="340" stroke="var(--card-border)" />
+                    <line x1="200" y1="200" x2="40" y2="200" stroke="var(--card-border)" />
+                    <line x1="200" y1="200" x2="120" y2="60" stroke="var(--card-border)" />
+                    <!-- Data Polygon -->
+                    <polygon id="radar-poly" points="" fill="var(--google-blue)" fill-opacity="0.3" stroke="var(--google-blue)" stroke-width="2" />
+                </svg>
+            </div>
+        </section>
+
+        <!-- STATS TICKER -->
+        <div class="ticker-wrap">
+            <div class="ticker-content" id="ticker">
+                GEMMA 4 31B · GOOGLE DEEPMIND · 31B PARAMETERS · 128K CONTEXT WINDOW · MULTIMODAL VISION · GEMMA LICENSE · HUGGING FACE #1 OPEN MODEL · RELEASED APR 2025 · FUNCTION CALLING · AVAILABLE ON VERTEX AI · &nbsp;
+                GEMMA 4 31B · GOOGLE DEEPMIND · 31B PARAMETERS · 128K CONTEXT WINDOW · MULTIMODAL VISION · GEMMA LICENSE · HUGGING FACE #1 OPEN MODEL · RELEASED APR 2025 · FUNCTION CALLING · AVAILABLE ON VERTEX AI · &nbsp;
+            </div>
+        </div>
+
+        <!-- FEATURE CARDS -->
+        <section id="features" style="margin-top: 6rem;">
+            <div class="features-grid">
+                <!-- Card 1 -->
+                <div class="feature-card" style="--accent-glow: var(--google-blue)">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="var(--google-blue)" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 12z"/></svg>
+                    <h3>Multimodal Vision</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Direct visual processing through integrated vision encoders.</p>
+                    <div class="proficiency-bar"><div class="proficiency-fill" data-width="92%" style="background: var(--google-blue)"></div></div>
+                </div>
+                <!-- Card 2 -->
+                <div class="feature-card" style="--accent-glow: var(--google-green)">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="var(--google-green)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    <h3>128K Context</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Massive long-form reasoning and document analysis.</p>
+                    <div class="proficiency-bar"><div class="proficiency-fill" data-width="95%" style="background: var(--google-green)"></div></div>
+                </div>
+                <!-- Card 3 -->
+                <div class="feature-card" style="--accent-glow: var(--google-red)">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="var(--google-red)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <h3>Math Reasoning</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Advanced symbolic and arithmetic processing.</p>
+                    <div class="proficiency-bar"><div class="proficiency-fill" data-width="90%" style="background: var(--google-red)"></div></div>
+                </div>
+                <!-- Card 4 -->
+                <div class="feature-card" style="--accent-glow: var(--google-yellow)">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="var(--google-yellow)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <h3>Open Weights</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Accessible for researchers and developers worldwide.</p>
+                    <div class="proficiency-bar"><div class="proficiency-fill" data-width="100%" style="background: var(--google-yellow)"></div></div>
+                </div>
+                <!-- Card 5 -->
+                <div class="feature-card" style="--accent-glow: var(--google-blue)">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="var(--google-blue)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    <h3>Function Calling</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Seamless integration with external API ecosystems.</p>
+                    <div class="proficiency-bar"><div class="proficiency-fill" data-width="85%" style="background: var(--google-blue)"></div></div>
+                </div>
+                <!-- Card 6 -->
+                <div class="feature-card" style="--accent-glow: var(--google-green)">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="var(--google-green)" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>
+                    <h3>Vertex AI Ready</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Enterprise-grade deployment on Google Cloud.</p>
+                    <div class="proficiency-bar"><div class="proficiency-fill" data-width="88%" style="background: var(--google-green)"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERACTIVE QUIZ -->
+        <section id="quiz">
+            <h2 style="text-align:center; margin-bottom: 2rem;">Think with Gemma</h2>
+            <div class="quiz-container">
+                <div id="quiz-content">
+                    <!-- Question 1 -->
+                    <div class="quiz-question active" data-step="1">
+                        <h3>Q1: Spatial Reasoning</h3>
+                        <p>A 3D cube is rotated 90 degrees clockwise on the Y-axis, then 90 degrees on the X-axis. If the front face was originally Blue, what is the new orientation of the Blue face?</p>
+                        <div class="quiz-options">
+                            <button class="quiz-btn" onclick="quiz.check(0, 1)">Top Face</button>
+                            <button class="quiz-btn" onclick="quiz.check(1, 1)">Bottom Face</button>
+                            <button class="quiz-btn" onclick="quiz.check(2, 1)">Right Face</button>
+                        </div>
+                    </div>
+                    <!-- Question 2 -->
+                    <div class="quiz-question" data-step="2">
+                        <h3>Q2: Logic Pattern</h3>
+                        <p>Sequence: [A1, C3, E5, ?]. What is the next logical element?</p>
+                        <div class="quiz-options">
+                            <button class="quiz-btn" onclick="quiz.check(0, 2)">G7</button>
+                            <button class="quiz-btn" onclick="quiz.check(1, 2)">F6</button>
+                            <button class="quiz-btn" onclick="quiz.check(2, 2)">H8</button>
+                        </div>
+                    </div>
+                    <!-- Question 3 -->
+                    <div class="quiz-question" data-step="3">
+                        <h3>Q3: Multimodal Context</h3>
+                        <p>If an image contains a sunset over a mountain range and the prompt asks "How do the colors reflect the time of day?", which feature is Gemma using most?</p>
+                        <div class="quiz-options">
+                            <button class="quiz-btn" onclick="quiz.check(0, 3)">Pure Text Tokenization</button>
+                            <button class="quiz-btn" onclick="quiz.check(1, 3)">Multimodal Vision Encoder</button>
+                            <button class="quiz-btn" onclick="quiz.check(2, 3)">Simple Metadata Search</button>
+                        </div>
+                    </div>
+                    <!-- Result -->
+                    <div id="quiz-result">
+                        <h3 id="result-msg"></h3>
+                        <p id="result-score"></p>
+                        <button class="theme-toggle" style="margin-top: 1rem;" onclick="location.reload()">Retry Test</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CODE SHOWCASE -->
+        <section id="code">
+            <h2 style="margin-bottom: 1.5rem;">Developer Interface</h2>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="codeShowcase.switch(0)">Hugging Face Pipeline</button>
+                <button class="tab-btn" onclick="codeShowcase.switch(1)">Google Vertex AI</button>
+            </div>
+            <div class="code-block-wrap">
+                <button class="copy-btn" onclick="codeShowcase.copy()">Copy Code</button>
+                <pre id="code-display"></pre>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-logo">Gemma OS</div>
+        <div class="tagline">Build timestamp: <span id="timestamp"></span></div>
+        <div class="tagline" style="font-weight: bold; margin-top: 10px;">Open models. Open future.</div>
+    </footer>
+
+    <script>
+        /** 
+         * IIFE: OS CORE 
+         * Handles clock, theme, particles, and scroll progress
+         **/
+        (function() {
+            // Theme Management
+            const themeBtn = document.getElementById('theme-btn');
+            const body = document.body;
+            const savedTheme = localStorage.getItem('gemma-theme') || 'dark';
+            body.setAttribute('data-theme', savedTheme);
+            themeBtn.innerText = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+
+            themeBtn.addEventListener('click', () => {
+                const current = body.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                body.setAttribute('data-theme', next);
+                localStorage.setItem('gemma-theme', next);
+                themeBtn.innerText = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+            });
+
+            // Clock
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+            }, 1000);
+
+            // TPU Load Simulator
+            let tpuLoad = 42;
+            setInterval(() => {
+                tpuLoad += (Math.random() * 6 - 3);
+                tpuLoad = Math.min(Math.max(tpuLoad, 10), 98);
+                document.getElementById('tpu-val').innerText = tpuLoad.toFixed(1);
+            }, 4000);
+
+            // Particles
+            const pContainer = document.getElementById('particles');
+            for(let i=0; i<15; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 4 + 2;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}%`;
+                p.style.top = `${Math.random() * 100}%`;
+                p.style.animationDuration = `${Math.random() * 10 + 10}s`;
+                p.style.animationDelay = `${Math.random() * 5}s`;
+                pContainer.appendChild(p);
+            }
+
+            // Scroll Progress
+            window.addEventListener('scroll', () => {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                document.getElementById('progress-fill').style.width = scrolled + "%";
+            });
+
+            // Timestamp
+            document.getElementById('timestamp').innerText = new Date().toISOString();
+        })();
+
+        /**
+         * IIFE: TERMINAL BOOT
+         **/
+        (function() {
+            const terminal = document.getElementById('terminal-content');
+            const lines = [
+                "Gemma 4 31B initializing...",
+                "Loading multimodal weights... [████████████████████] 100%",
+                "Vision encoder: online",
+                "Audio weights (2B/4B parity): bypass active",
+                "128K context window: active",
+                "Distributed TPU cluster: connected",
+                "Ready for inference."
+            ];
+            
+            let lineIdx = 0;
+            function typeLine() {
+                if(lineIdx < lines.length) {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = "5px";
+                    div.innerText = "> " + lines[lineIdx];
+                    terminal.appendChild(div);
+                    lineIdx++;
+                    setTimeout(typeLine, 600);
+                } else {
+                    const cursor = document.createElement('span');
+                    cursor.className = 'cursor';
+                    terminal.appendChild(cursor);
+                }
+            }
+            setTimeout(typeLine, 500);
+        })();
+
+        /**
+         * IIFE: RADAR CHART
+         **/
+        (function() {
+            const data = [
+                { label: "Reasoning", val: 88 },
+                { label: "Coding", val: 87 },
+                { label: "Math", val: 90 },
+                { label: "Creativity", val: 83 },
+                { label: "Speed", val: 85 },
+                { label: "Context", val: 89 }
+            ];
+
+            const svg = document.getElementById('radar-svg');
+            const poly = document.getElementById('radar-poly');
+            const centerX = 200;
+            const centerY = 200;
+            const maxRadius = 160;
+
+            const points = data.map((d, i) => {
+                const angle = (Math.PI * 2 / data.length) * i - Math.PI / 2;
+                const r = (d.val / 100) * maxRadius;
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+                return `${x},${y}`;
+            }).join(" ");
+
+            poly.setAttribute("points", points);
+
+            // Observer to animate radar on scroll
+            const observer = new IntersectionObserver((entries) => {
+                if(entries[0].isIntersecting) {
+                    poly.style.transition = "all 1.5s cubic-bezier(0.4, 0, 0.2, 1)";
+                    // In a real implementation, we'd animate the points, 
+                    // here we just trigger the visibility.
+                    entries[0].target.classList.add('visible');
+                }
+            });
+            observer.observe(document.getElementById('capabilities'));
+        })();
+
+        /**
+         * IIFE: INTERSECTION OBSERVER (FOR SECTIONS & CARDS)
+         **/
+        (function() {
+            const observerOptions = { threshold: 0.1 };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // If it's the features section, trigger progress bars
+                        if(entry.target.id === 'features') {
+                            const fills = entry.target.querySelectorAll('.proficiency-fill');
+                            fills.forEach(f => f.style.width = f.getAttribute('data-width'));
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('section').forEach(s => observer.observe(s));
+        })();
+
+        /**
+         * IIFE: QUIZ LOGIC
+         **/
+        window.quiz = (function() {
+            let score = 0;
+            let currentStep = 1;
+
+            return {
+                check: function(choiceIdx, step) {
+                    const answers = { 1: 1, 2: 0, 3: 1 }; // Correct answer indices
+                    if(choiceIdx === answers[step]) score++;
+                    
+                    const currentEl = document.querySelector(`.quiz-question[data-step="${step}"]`);
+                    currentEl.classList.remove('active');
+
+                    if(step < 3) {
+                        currentStep++;
+                        const nextEl = document.querySelector(`.quiz-question[data-step="${step + 1}"]`);
+                        nextEl.classList.add('active');
+                    } else {
+                        this.showResult();
+                    }
+                },
+                showResult: function() {
+                    const res = document.getElementById('quiz-result');
+                    const msg = document.getElementById('result-msg');
+                    const scoreTxt = document.getElementById('result-score');
+                    res.style.display = 'block';
+                    
+                    if(score === 3) {
+                        msg.innerText = "Exceptional Reasoning!";
+                        msg.style.color = "var(--google-green)";
+                    } else if(score >= 1) {
+                        msg.innerText = "Human-Level Intelligence.";
+                        msg.style.color = "var(--google-yellow)";
+                    } else {
+                        msg.innerText = "System Error: Cognitive Gap.";
+                        msg.style.color = "var(--google-red)";
+                    }
+                    scoreTxt.innerText = `Final Score: ${score}/3`;
+                }
+            };
+        })();
+
+        /**
+         * IIFE: CODE SHOWCASE
+         **/
+        window.codeShowcase = (function() {
+            const snippets = [
+                `# Hugging Face Transformers Implementation
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id = "google/gemma-4-31b"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(model_id)
+
+prompt = "Explain quantum entanglement."
+inputs = tokenizer(prompt, return_tensors="pt")
+
+outputs = model.generate(**inputs, max_new_tokens=100)
+print(tokenizer.decode(outputs[0]))`,
+
+                `# Google Vertex AI Implementation
+from vertexai.generative_models import GenerativeModel
+import vertexai
+
+vertexai.init(project="deepmind-gemma", location="us-central1")
+model = GenerativeModel("gemma-4-31b")
+
+response = model.generate_content("Explain quantum entanglement.")
+print(response.text)`
+            ];
+
+            const display = document.getElementById('code-display');
+            const btns = document.querySelectorAll('.tab-btn');
+
+            function highlight(code) {
+                return code
+                    .replace(/(#.*)/g, '<span class="token-kw">$1</span>')
+                    .replace(/(".*?"|'.*?')/g, '<span class="token-str">$1</span>')
+                    .replace(/(\w+)(?=\()/g, '<span class="token-fn">$1</span>');
+            }
+
+            return {
+                switch: function(idx) {
+                    btns.forEach((b, i) => b.classList.toggle('active', i === idx));
+                    display.innerHTML = highlight(snippets[idx]);
+                },
+                copy: function() {
+                    const text = display.innerText;
+                    navigator.clipboard.writeText(text);
+                    const btn = document.querySelector('.copy-btn');
+                    btn.innerText = "Copied!";
+                    setTimeout(() => btn.innerText = "Copy Code", 2000);
+                },
+                init: function() { this.switch(0); }
+            };
+        })();
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            codeShowcase.init();
+        });
+    </script>
+</body>
+</html>
