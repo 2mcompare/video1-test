@@ -623,6 +623,16 @@ h4 { font-size: 24px; font-weight: 600; }
     <div id="s11-thanks" style="margin-top:16px; font-size:18px; color:var(--gray-400);">
       Thanks for watching. See you in the next one.
     </div>
+    <div id="s11-subscribe" class="info-card" style="display:inline-flex; flex-direction:column; align-items:center; gap:14px; padding:20px 44px; margin-top:8px; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.05);">
+      <div id="s11-sub-ring" style="position:relative; width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg,#ff0000,#cc0000); display:flex; align-items:center; justify-content:center; box-shadow:0 0 30px rgba(239,68,68,0.3);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="#fff"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:22px; font-weight:700; color:var(--white);">Subscribe to</div>
+        <div style="font-size:32px; font-weight:800; background:linear-gradient(135deg,var(--blue-300),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">@ArafatAhmedMubin</div>
+      </div>
+      <div style="font-size:15px; color:var(--gray-400);">for more AI benchmarks</div>
+    </div>
 
   </div>
 </div>
@@ -831,6 +841,9 @@ tl1.from("#s11-title", { opacity: 0, y: 30, duration: 0.7, ease: "power3.out" },
 tl1.from("#s11-body", { opacity: 0, y: 20, duration: 0.5, ease: "power2.out" }, 682.1);
 tl1.from("#s11-cta", { opacity: 0, scale: 0.9, duration: 0.6, ease: "back.out(1.5)" }, 682.6);
 tl1.from("#s11-thanks", { opacity: 0, y: 15, duration: 0.5, ease: "power2.out" }, 683.1);
+// Subscribe screen appears after the voiceover wraps up
+tl1.from("#s11-subscribe", { opacity: 0, scale: 0.85, duration: 1.0, ease: "back.out(2)" }, 694);
+tl1.from("#s11-sub-ring", { scale: 0, duration: 0.7, ease: "back.out(2.5)" }, 694.5);
 
 // Final fade to black
 tl1.to("#s11-end", { opacity: 1, duration: 1.5, ease: "power2.inOut" }, 707);
