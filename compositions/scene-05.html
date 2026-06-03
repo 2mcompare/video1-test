@@ -88,7 +88,10 @@ h4 { font-size: 24px; font-weight: 600; }
         <span id="s5-score-num">0.0</span><span style="font-size:20px; color:var(--gray-400);">/10</span>
       </div>
     </div>
-    <div id="s5-contents" style="display:flex; gap:20px;">
+    <div id="s5-contents" style="display:flex; gap:20px; align-items:stretch;">
+      <div id="s5-screen-wrap" style="flex:0.8; border-radius:14px; overflow:hidden; border:1px solid rgba(251,146,60,0.25); box-shadow:0 4px 25px rgba(0,0,0,0.3); background:#060f1c;">
+        <img id="s5-screenshot" src="../assets/screenshots/mimo.png" style="width:100%; display:block;" alt="MiMo model output">
+      </div>
       <div style="flex:1.3;">
         <div class="info-card" style="margin-bottom:8px;">
           <div style="font-size:18px; color:var(--orange); font-weight:600; margin-bottom:4px;">🏆 Best Terminal of All 5</div>
@@ -143,6 +146,7 @@ window.__timelines["scene-05"] = tl1;
 tl1.from("#s5", { opacity: 0, duration: 0.3 }, 0);
 tl1.from("#s5-header", { opacity: 0, x: -30, duration: 0.6, ease: "expo.out" }, 1.3);
 tl1.from("#s5-contents > div", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out", stagger: 0.15 }, 1.8);
+tl1.from("#s5-screen-wrap", { opacity: 0, x: -40, duration: 0.7, ease: "power3.out" }, 1.3);
 tl1.to({}, { duration: 1.2, ease: 'none',
   onUpdate: function() { document.getElementById('s5-score-num').textContent = spring(this.progress(), { from: 0, to: 7.5 }).toFixed(1); },
   onComplete: function() { document.getElementById('s5-score-num').textContent = '7.5'; }
